@@ -1,6 +1,4 @@
 import os
-import sys
-import json
 import asyncio
 from urllib.parse import urljoin
 from dotenv import load_dotenv
@@ -13,30 +11,24 @@ config = StagehandConfig(
     env="LOCAL",
     model_name="google/gemini-2.0-flash",
     model_api_key=api_key,
-    local_browser_launch_options={"headless": True},
+    local_browser_launch_options={"headless": False},
     verbose=3,
     debug_dom=True
 )
 
 BASE = "https://www.cninfo.com.cn"
+URL  = "https://www.cninfo.com.cn/new/disclosure/stock?orgId=gssz0002031&stockCode=002031#latestAnnouncement"
 
-async def main(configJson):
+async def main():
     async with Stagehand(config) as sh:
-        # 读取配置文件
-        with open(configJson, 'r', encoding='utf-8') as f:
-            config_data = json.load(f)
-        target_url = config_data['target_url']
-        startDate = config_data['startDate']
-        endDate = config_data['endDate']
-
         page = sh.page
 
         # 1. 打开公告页面
-        await page.goto(target_url)
+        await page.goto(URL)
 
         # 2. 输入日期并点击查询
-        await page.fill('input[placeholder="开始日期"]', startDate)
-        await page.fill('input[placeholder="结束日期"]', endDate)
+        await page.fill('input[placeholder="开始日期"]', '2025-08-01')
+        await page.fill('input[placeholder="结束日期"]', '2025-08-21')
         await page.click('button:has-text("查询")')
 
         # 3. 等待表格行加载
@@ -62,17 +54,11 @@ async def main(configJson):
             else:
                 times.append("")
 
-
-        config_data['titles'] = titles
-        with open(configJson, 'w', encoding='utf-8') as f:
-            json.dump(config_data, f, ensure_ascii=False, indent=4)
-        print("✅ 标题已保存到config.json")
-
         # 打印结果
         for t, h, tm in zip(titles, hrefs, times):
             print(f"{tm} | {t} -> {h}")
 
+        return titles, hrefs, times
+
 if __name__ == "__main__":
-    # 获取命令行参数，如果没有提供则使用默认的config_1.json
-    config_file = sys.argv[1] if len(sys.argv) > 1 else 'config.json'
-    asyncio.run(main(config_file))
+    titles, hrefs, times = asyncio.run(main())

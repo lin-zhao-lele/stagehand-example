@@ -26,10 +26,10 @@ const ensureDirectories = () => {
 // 创建配置文件
 app.post('/api/config', (req, res) => {
   try {
-    const { targetUrls, companyName } = req.body;
+    const { targetUrls, companyName, startDate, endDate } = req.body;
     
-    if (!targetUrls || !companyName) {
-      return res.status(400).json({ error: 'Missing targetUrls or companyName' });
+    if (!targetUrls || !companyName || !startDate || !endDate) {
+      return res.status(400).json({ error: 'Missing required fields: targetUrls, companyName, startDate, or endDate' });
     }
     
     const urls = targetUrls.split('\n').filter(url => url.trim());
@@ -41,6 +41,8 @@ app.post('/api/config', (req, res) => {
         const configData = {
           target_url: trimmedUrl,
           companyName: companyName.trim(),
+          startDate: startDate,
+          endDate: endDate,
           titles: []
         };
         
