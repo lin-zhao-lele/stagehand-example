@@ -91,23 +91,23 @@ app.post('/api/run-tasks', async (req, res) => {
     // 处理配置文件
     console.log(`处理配置文件: ${configFile}`);
     
-    // 1. 运行 inputJson.py
-    console.log('执行 inputJson.py 任务...');
+    // 1. 运行 inputJson.py (预处理阶段)
+    console.log('执行 预处理阶段 任务...');
     await runPythonScript('inputJson.py', [configFile]);
-    console.log('inputJson.py 任务完成');
+    console.log('预处理阶段 任务完成');
     
-    // 2. 运行 getPdfFiles.py
-    console.log('执行 getPdfFiles.py 任务...');
+    // 2. 运行 getPdfFiles.py (从服务器获取pdf文件)
+    console.log('执行 从服务器获取pdf文件 任务...');
     await runPythonScript('getPdfFiles.py', [configFile]);
-    console.log('getPdfFiles.py 任务完成');
+    console.log('从服务器获取pdf文件 任务完成');
     
     // 3. 移动PDF文件从downloads到data目录
     console.log('移动PDF文件从downloads到data目录...');
     movePdfFiles();
     console.log('PDF文件移动完成');
     
-    // 4. 处理data目录下的PDF文件
-    console.log('处理data目录下的PDF文件...');
+    // 4. 处理data目录下的PDF文件 (大语言模型分析)
+    console.log('处理data目录下的PDF文件 (大语言模型分析)...');
     const pdfFiles = fs.readdirSync('./data')
       .filter(file => file.endsWith('.pdf') || file.endsWith('.PDF'));
     

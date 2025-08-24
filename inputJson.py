@@ -18,6 +18,15 @@ config = StagehandConfig(
     debug_dom=True
 )
 
+# config = StagehandConfig(
+#     env="LOCAL",
+#     model_name="deepseek-ai/DeepSeek-V3",
+#     model_api_key="",
+#     local_browser_launch_options={"headless": True},
+#     verbose=3,
+#     debug_dom=True
+# )
+
 BASE = "https://www.cninfo.com.cn"
 
 async def main(configJson):

@@ -38,10 +38,10 @@ node server.js
 ## 功能说明
 - 配置文件创建：支持同时创建多个配置文件，文件名格式为config_1.json, config_2.json等
 - 任务执行流程：
-  1. 运行inputJson.py处理每个配置文件
-  2. 运行getPdfFiles.py下载PDF文件
+  1. 运行预处理阶段处理每个配置文件
+  2. 运行从服务器获取pdf文件下载PDF文件
   3. 将下载的PDF文件从downloads目录移动到data目录
-  4. 运行callGemini.py分析data目录中的每个PDF文件
+  4. 运行大语言模型分析分析data目录中的每个PDF文件
 - 实时状态显示：显示各个agent的运行状态
 - 日志显示：在Console区域显示任务执行日志
 
