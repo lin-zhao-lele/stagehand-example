@@ -29,16 +29,59 @@ async def main():
         # 获取页面对象，用于后续的页面操作
         page = stagehand.page
 
-        await page.goto("https://www.cninfo.com.cn/new/disclosure/stock?orgId=gssz0002031&stockCode=002031#latestAnnouncement")
+        # 1. 打开网站https://www.cninfo.com.cn
+        await page.goto("https://www.cninfo.com.cn")
 
-        # 使用observe()获取所有博客文章链接
-        blog_links = await page.observe("获取页面上最新公告区域内的所有的以'巨能智能：'开头的公告的标题、公告时间和指向的链接")
-        print(f"✅ 发现 {len(blog_links)} 篇博客文章: {blog_links}")
-
-        # 使用 for 循环处理所有博客链接
-        for i, blog_link in enumerate(blog_links[:]):  #
-            print(f"\n🚀 正在处理第 {i + 1} 篇公告..." )
-
+        # 2. 在网站的搜索框内输入"巨能智能"
+        await page.act("在搜索框中输入'巨能智能'")
+        
+        # 点击搜索按钮
+        await page.act("点击搜索按钮")
+        
+        # 等待页面加载
+        await page.wait_for_timeout(5000)
+        
+        # 3. 在搜索结果的页面中定位一个页面区域，标题是：包含"巨轮智能"关键词的搜索结果
+        # 4. 在该页面区域，找到所有标题中包含"巨能智能："的文章
+        # 5. 将所有文章的标题和链接地址输出到控制台
+        print("🔍 正在提取页面内容...")
+        try:
+            # 先获取页面的文本内容进行调试
+            page_content = await page.extract(instruction="提取页面的文本内容")
+            print("📄 页面内容预览:", str(page_content)[:200] + "..." if len(str(page_content)) > 200 else page_content)
+            
+            # 尝试提取文章
+            articles = await page.extract(
+                instruction="找到页面中所有标题包含'巨能智能'的文章，提取它们的标题和链接地址"
+            )
+            
+            # 6. 输出所有文章的标题和链接地址到控制台
+            if articles:
+                print("✅ 找到的文章:")
+                # 如果返回的是字符串，尝试解析为对象
+                if isinstance(articles, str):
+                    print(articles)
+                else:
+                    # 如果是对象，格式化输出
+                    if isinstance(articles, dict):
+                        if 'articles' in articles and isinstance(articles['articles'], list):
+                            for i, article in enumerate(articles['articles'], 1):
+                                title = article.get('title', 'N/A')
+                                link = article.get('link', 'N/A')
+                                print(f"{i}. 标题: {title}")
+                                print(f"   链接: {link}")
+                        else:
+                            print(articles)
+                    else:
+                        print(articles)
+            else:
+                print("❌ 未找到符合条件的文章")
+        except Exception as e:
+            print(f"❌ 提取过程中发生错误: {e}")
+            # 打印页面URL以便调试
+            current_url = page.url
+            print(f"📍 当前页面URL: {current_url}")
+        
 
     except Exception as e:
         print(f"❌ 发生错误: {e}")
