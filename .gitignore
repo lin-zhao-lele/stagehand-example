@@ -1,6 +1,6 @@
 .env
 .venv
 .claude
-./downloads/
+downloads/
 .idea/
-./data/
+data/

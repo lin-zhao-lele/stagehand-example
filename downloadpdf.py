@@ -28,15 +28,16 @@ async def main():
         # 获取页面对象，用于后续的页面操作
         page = stagehand.page
 
-        # 1. 打开指定网站
-        await page.goto("https://www.cninfo.com.cn/new/disclosure/stock?orgId=gssz0002031&stockCode=002031#latestAnnouncement")
+        # 打开指定网站
+        targetURL='https://www.cninfo.com.cn/new/disclosure/stock?orgId=gssz0002031&stockCode=002031#latestAnnouncement'
+        await page.goto(targetURL)
 
         # 等待页面加载完成
         await page.wait_for_timeout(5000)
 
-        # 2. 找到文章 "巨轮智能：2025年半年度报告" 并点击它
-        # 使用更具体的指令来定位并点击正确的链接
-        await page.act("找到文章 '巨轮智能：2025年半年度报告' 的链接并保存链接内容到本地")
+        # 找到文章 "巨轮智能：2025年半年度报告" 并保存它
+        title = '巨轮智能：2025年半年度报告'
+        await page.act(f"找到文章'{title}'的链接并保存链接内容到本地")
 
         
         print("✅ PDF下载完成")
