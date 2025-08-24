@@ -8,17 +8,17 @@ from stagehand import Stagehand
 load_dotenv()
 
 
-async def main():
+async def main(configJson):
     # 检查API密钥是否设置
     api_key = os.getenv("GEMINI_API_KEY")
 
     # 读取配置文件
-    with open('config.json', 'r', encoding='utf-8') as f:
+    with open(configJson, 'r', encoding='utf-8') as f:
         config_data = json.load(f)
-
+    
     target_url = config_data['target_url']
     titles = config_data['titles']
-
+    
     stagehand = None
 
     try:
@@ -30,7 +30,7 @@ async def main():
             local_browser_launch_options={"headless": True},
             verbose=3
         )
-
+        
         # 初始化Stagehand（启动浏览器会话）
         await stagehand.init()
 
@@ -45,7 +45,7 @@ async def main():
 
         # 依次保存每个PDF
         for i, title in enumerate(titles):
-            print(f"正在处理第 {i + 1} 个文件: {title}")
+            print(f"正在处理第 {i+1} 个文件: {title}")
             try:
                 await save_pdf(stagehand, title)
                 # 等待一段时间确保下载完成
@@ -55,13 +55,13 @@ async def main():
                 # 继续处理下一个文件而不是终止整个程序
                 if i < len(titles) - 1:
                     await asyncio.sleep(10)
-
+            
             # 如果不是最后一个文件，重新初始化Stagehand
             if i < len(titles) - 1:
                 # 关闭当前Stagehand实例
                 if stagehand:
                     await stagehand.close()
-
+                
                 # 重新创建Stagehand实例
                 stagehand = Stagehand(
                     env="LOCAL",
@@ -72,7 +72,7 @@ async def main():
                 )
                 await stagehand.init()
                 page = stagehand.page
-
+                
                 # 重新打开指定网站
                 await page.goto(target_url)
                 await page.wait_for_timeout(5000)
@@ -97,4 +97,4 @@ async def save_pdf(stagehand, title):
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    asyncio.run(main('config.json'))

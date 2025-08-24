@@ -10,6 +10,10 @@ load_dotenv()
 # 配置 API Key
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
+def call_gemini_analyze_pdf_test(pdf_path):
+    print("正在上传和处理 PDF 文件...")
+    print(f"'{pdf_path}' 处理完毕！")
+
 def call_gemini_analyze_pdf(pdf_path):
     """
     调用 Gemini-2.0-flash 分析 PDF 文档
