@@ -98,5 +98,9 @@ async def main(configJson):
         await stagehand.close()
 
 
+import sys
+
 if __name__ == "__main__":
-    asyncio.run(main('config.json'))
+    # 获取命令行参数，如果没有提供则使用默认的config_1.json
+    config_file = sys.argv[1] if len(sys.argv) > 1 else 'config_1.json'
+    asyncio.run(main(config_file))

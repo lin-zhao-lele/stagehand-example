@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>配置文件管理器</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+</head>
+<body class="bg-gray-100">
+    <div id="app" class="min-h-screen py-8">
+        <div class="max-w-6xl mx-auto px-4">
+            <h1 class="text-3xl font-bold text-center mb-8 text-gray-800">配置文件管理器</h1>
+            
+            <!-- 配置文件创建区域 -->
+            <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+                <h2 class="text-xl font-semibold mb-4 text-gray-700">创建配置文件</h2>
+                
+                <!-- Target URLs 输入 -->
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="targetUrls">
+                        目标URLs (每行一个)
+                    </label>
+                    <textarea 
+                        id="targetUrls" 
+                        v-model="newTargetUrls" 
+                        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                        rows="4"
+                        placeholder="https://example.com/page1&#10;https://example.com/page2"
+                    ></textarea>
+                </div>
+                
+                <!-- Company Name 输入 -->
+                <div class="mb-6">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="companyName">
+                        公司名称
+                    </label>
+                    <input 
+                        type="text" 
+                        id="companyName" 
+                        v-model="newCompanyName" 
+                        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                        placeholder="输入公司名称"
+                    >
+                </div>
+                
+                <!-- 创建按钮 -->
+                <button 
+                    @click="createConfigFiles" 
+                    class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                    :disabled="isProcessing"
+                >
+                    {{ isProcessing ? '处理中...' : '创建配置文件' }}
+                </button>
+            </div>
+            
+            <!-- Agent状态指示区域 -->
+            <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+                <h2 class="text-xl font-semibold mb-4 text-gray-700">Agent状态</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="flex items-center p-4 bg-gray-50 rounded-lg">
+                        <div class="w-4 h-4 rounded-full mr-3" :class="agentStatus.inputJson"></div>
+                        <span class="font-medium">inputJson.py</span>
+                    </div>
+                    <div class="flex items-center p-4 bg-gray-50 rounded-lg">
+                        <div class="w-4 h-4 rounded-full mr-3" :class="agentStatus.getPdfFiles"></div>
+                        <span class="font-medium">getPdfFiles.py</span>
+                    </div>
+                    <div class="flex items-center p-4 bg-gray-50 rounded-lg">
+                        <div class="w-4 h-4 rounded-full mr-3" :class="agentStatus.callGemini"></div>
+                        <span class="font-medium">callGemini.py</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 运行控制区域 -->
+            <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+                <h2 class="text-xl font-semibold mb-4 text-gray-700">执行任务</h2>
+                <button 
+                    @click="runAllTasks" 
+                    class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                    :disabled="isRunning || isProcessing"
+                >
+                    {{ isRunning ? '运行中...' : '运行所有任务' }}
+                </button>
+                <p v-if="runCompleted" class="mt-4 text-green-600 font-medium">所有任务已成功完成！</p>
+            </div>
+            
+            <!-- Console日志区域 -->
+            <div class="bg-gray-800 rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-semibold mb-4 text-gray-100">执行日志</h2>
+                <div ref="logContainer" class="bg-black rounded p-4 h-64 overflow-y-auto font-mono text-sm text-green-400">
+                    <div v-for="(log, index) in logs" :key="index" class="mb-1">
+                        $ {{ log }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, reactive, nextTick } = Vue;
+        
+        createApp({
+            setup() {
+                // 数据状态
+                const newTargetUrls = ref('');
+                const newCompanyName = ref('');
+                const isProcessing = ref(false);
+                const isRunning = ref(false);
+                const runCompleted = ref(false);
+                const logs = ref([]);
+                const logContainer = ref(null);
+                
+                // Agent状态 (绿色默认，红色运行中)
+                const agentStatus = reactive({
+                    inputJson: 'bg-green-500',
+                    getPdfFiles: 'bg-green-500',
+                    callGemini: 'bg-green-500'
+                });
+                
+                // 添加日志
+                const addLog = (message) => {
+                    const timestamp = new Date().toLocaleTimeString();
+                    logs.value.push(`[${timestamp}] ${message}`);
+                    // 保持最多200条日志
+                    if (logs.value.length > 200) {
+                        logs.value.shift();
+                    }
+                    // 滚动到底部
+                    nextTick(() => {
+                        if (logContainer.value) {
+                            logContainer.value.scrollTop = logContainer.value.scrollHeight;
+                        }
+                    });
+                };
+                
+                // 设置Agent状态
+                const setAgentStatus = (agent, status) => {
+                    agentStatus[agent] = status === 'running' ? 'bg-red-500' : 'bg-green-500';
+                };
+                
+                // 创建配置文件
+                const createConfigFiles = async () => {
+                    if (!newTargetUrls.value.trim() || !newCompanyName.value.trim()) {
+                        addLog('错误: 请填写所有字段');
+                        return;
+                    }
+                    
+                    isProcessing.value = true;
+                    addLog('开始创建配置文件...');
+                    
+                    try {
+                        const response = await fetch('/api/config', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                targetUrls: newTargetUrls.value,
+                                companyName: newCompanyName.value
+                            })
+                        });
+                        
+                        const result = await response.json();
+                        
+                        if (response.ok) {
+                            addLog(result.message);
+                            newTargetUrls.value = '';
+                            newCompanyName.value = '';
+                        } else {
+                            addLog(`创建配置文件失败: ${result.error}`);
+                        }
+                    } catch (error) {
+                        addLog(`创建配置文件失败: ${error.message}`);
+                    } finally {
+                        isProcessing.value = false;
+                    }
+                };
+                
+                // 运行所有任务
+                const runAllTasks = async () => {
+                    isRunning.value = true;
+                    runCompleted.value = false;
+                    logs.value = []; // 清空之前的日志
+                    addLog('开始执行所有任务...');
+                    
+                    try {
+                        // 显示正在运行的状态
+                        setAgentStatus('inputJson', 'running');
+                        addLog('执行 inputJson.py 任务...');
+                        
+                        const response = await fetch('/api/run-tasks', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            }
+                        });
+                        
+                        const result = await response.json();
+                        
+                        if (response.ok) {
+                            // 更新各个agent的状态
+                            setAgentStatus('inputJson', 'idle');
+                            setAgentStatus('getPdfFiles', 'idle');
+                            setAgentStatus('callGemini', 'idle');
+                            
+                            addLog(result.message);
+                            runCompleted.value = true;
+                        } else {
+                            addLog(`任务执行失败: ${result.error}`);
+                            setAgentStatus('inputJson', 'idle');
+                            setAgentStatus('getPdfFiles', 'idle');
+                            setAgentStatus('callGemini', 'idle');
+                        }
+                    } catch (error) {
+                        addLog(`任务执行失败: ${error.message}`);
+                        setAgentStatus('inputJson', 'idle');
+                        setAgentStatus('getPdfFiles', 'idle');
+                        setAgentStatus('callGemini', 'idle');
+                    } finally {
+                        isRunning.value = false;
+                        setAgentStatus('inputJson', 'idle');
+                        setAgentStatus('getPdfFiles', 'idle');
+                        setAgentStatus('callGemini', 'idle');
+                    }
+                };
+                
+                return {
+                    newTargetUrls,
+                    newCompanyName,
+                    isProcessing,
+                    isRunning,
+                    runCompleted,
+                    logs,
+                    logContainer,
+                    agentStatus,
+                    createConfigFiles,
+                    runAllTasks,
+                    addLog,
+                    setAgentStatus
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>

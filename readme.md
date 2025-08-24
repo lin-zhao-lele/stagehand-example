@@ -10,22 +10,41 @@ pip install stagehand python-dotenv google-generativeai
 python -m playwright install
 
 # 指定安装特定浏览器
-# python -m playwright install chromium
+python -m playwright install chromium
 
+# 启动Web应用程序
 
-# 提示
-example.py 给出了一个示例，如何在Stagehand的框架内使用gemini的api；使用context7参考Stagehand相关文档，修改app.py实现以下的功能
-1 打开网站https:/https://www.cninfo.com.cn
-2 在网站的搜索框内输入 ”巨能智能“，然后在搜索结果的页面中定位一个页面区域， 标题是： 包含"巨轮智能"关键词的搜索结果
-3 在该页面区域，找到所有标题中包含 ”巨能智能：“的文章
-4 将所有文章的标题和链接地址输出到控制台
+## 前置条件
+确保已安装Node.js和npm
 
-example.py 给出了一个示例，如何在Stagehand的框架内使用gemini的api；使用context7参考Stagehand相关文档，新建test1.py实现以下的功能
-1 打开网站https://www.cninfo.com.cn/new/fulltextSearch?notautosubmit=&keyWord=巨轮智能
-3 查找所有包含onclick的超链接标签，提取每个超链接标签的onclick和href属性
-4 将所有onclick和href信息输出到控制台
+## 安装依赖
+```bash
+npm install
+```
 
-example.py 给出了一个示例，如何在Stagehand的框架内使用gemini的api；使用context7参考Stagehand相关文档，新建downloadpdf.py实现以下的功能
-1 打开网站 https://www.cninfo.com.cn/new/disclosure/stock?orgId=gssz0002031&stockCode=002031#latestAnnouncement
-2 找到文章 ”巨轮智能：2025年半年度报告“
-3 下载链接里面的pdf文档，保存到本地./download目录下
+## 启动服务器
+```bash
+node server.js
+```
+
+服务器将运行在 http://localhost:3000
+
+## 使用说明
+1. 打开浏览器访问 http://localhost:3000
+2. 在"创建配置文件"区域输入目标URL和公司名称
+3. 点击"创建配置文件"按钮
+4. 点击"运行所有任务"按钮开始执行任务
+
+## 功能说明
+- 配置文件创建：支持同时创建多个配置文件，文件名格式为config_1.json, config_2.json等
+- 任务执行流程：
+  1. 运行inputJson.py处理每个配置文件
+  2. 运行getPdfFiles.py下载PDF文件
+  3. 将下载的PDF文件从downloads目录移动到data目录
+  4. 运行callGemini.py分析data目录中的每个PDF文件
+- 实时状态显示：显示各个agent的运行状态
+- 日志显示：在Console区域显示任务执行日志
+
+## 版本说明
+ version 0.1.X 不带web UI
+ version 0.2.X 带js webUI 初始版本 有问题 能run 

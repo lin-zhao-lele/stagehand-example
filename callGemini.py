@@ -1,5 +1,6 @@
 import os
 import json
+import sys
 from pathlib import Path
 from dotenv import load_dotenv
 import google.generativeai as genai
@@ -19,7 +20,10 @@ def call_gemini_analyze_pdf(pdf_path):
     调用 Gemini-2.0-flash 分析 PDF 文档
     """
     try:
-
+        # 确保pdf_path是Path对象
+        if isinstance(pdf_path, str):
+            pdf_path = Path(pdf_path)
+            
         # 检查 PDF 文件是否存在
         if not pdf_path.exists():
             print(f"❌ 错误: 找不到 PDF 文件 {pdf_path}")
@@ -71,6 +75,9 @@ def call_gemini_analyze_pdf(pdf_path):
             output_filename = pdf_path.stem + ".md"
             output_path = Path("./data") / output_filename
             
+            # 确保data目录存在
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            
             # 写入 Markdown 文件
             with open(output_path, 'w', encoding='utf-8') as f:
                 f.write(response.text)
@@ -85,5 +92,59 @@ def call_gemini_analyze_pdf(pdf_path):
         import traceback
         traceback.print_exc()
 
+def process_pdf_files(directory_path):
+    """
+    处理指定目录下的所有PDF文件，调用call_gemini_analyze_pdf函数。
+
+    参数:
+    directory_path (str): 包含PDF文件的目录路径
+    """
+    # 将目录路径转换为Path对象
+    dir_path = Path(directory_path)
+
+    # 检查目录是否存在
+    if not dir_path.exists() or not dir_path.is_dir():
+        print(f"错误: 目录 {directory_path} 不存在或不是目录")
+        return
+
+    # 获取目录下所有PDF文件（不区分大小写）
+    pdf_files = list(dir_path.glob("*.pdf")) + list(dir_path.glob("*.PDF"))
+
+    if not pdf_files:
+        print(f"在目录 {directory_path} 中没有找到PDF文件")
+        return
+
+    # 遍历每个PDF文件并调用函数
+    for pdf_file in pdf_files:
+        try:
+            # 调用函数处理PDF文件
+            call_gemini_analyze_pdf(pdf_file)
+            print(f"已处理文件: {pdf_file}")
+        except Exception as e:
+            print(f"处理文件 {pdf_file} 时出错: {e}")
+
+def main(pdf_file_path=None):
+    """
+    主函数，用于处理单个PDF文件
+    
+    参数:
+    pdf_file_path (str): PDF文件路径
+    """
+    if pdf_file_path:
+        # 处理指定的PDF文件
+        # pdf_path = Path(pdf_file_path)
+        # call_gemini_analyze_pdf(pdf_path)
+        call_gemini_analyze_pdf_test(pdf_file_path)
+
+    else:
+        # 如果没有提供文件路径，则处理data目录下的所有PDF文件
+        process_pdf_files("./data/")
+
 if __name__ == "__main__":
-    call_gemini_analyze_pdf(Path("./data/1224461857.PDF"))
+    # 获取命令行参数
+    if len(sys.argv) > 1:
+        # 使用第一个参数作为PDF文件路径
+        main(sys.argv[1])
+    else:
+        # 如果没有参数，则处理data目录下的所有PDF文件
+        main()

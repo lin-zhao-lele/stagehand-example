@@ -96,5 +96,11 @@ async def save_pdf(stagehand, title):
     await page.act(f"在表格中找到完全匹配'{title}'的链接并点击下载")
 
 
+
+
+import sys
+
 if __name__ == "__main__":
-    asyncio.run(main('config.json'))
+    # 获取命令行参数，如果没有提供则使用默认的config.json
+    config_file = sys.argv[1] if len(sys.argv) > 1 else 'config.json'
+    asyncio.run(main(config_file))
