@@ -16,18 +16,18 @@
             <div class="bg-white rounded-lg shadow-md p-6 mb-8">
                 <h2 class="text-xl font-semibold mb-4 text-gray-700">创建配置文件</h2>
                 
-                <!-- Target URLs 输入 -->
+                <!-- Target URL 输入 -->
                 <div class="mb-4">
-                    <label class="block text-gray-700 text-sm font-bold mb-2" for="targetUrls">
-                        目标URLs (每行一个)
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="targetUrl">
+                        目标URL
                     </label>
-                    <textarea 
-                        id="targetUrls" 
-                        v-model="newTargetUrls" 
+                    <input 
+                        type="url" 
+                        id="targetUrl" 
+                        v-model="newTargetUrl" 
                         class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                        rows="4"
-                        placeholder="https://example.com/page1&#10;https://example.com/page2"
-                    ></textarea>
+                        placeholder="https://example.com/page1"
+                    >
                 </div>
                 
                 <!-- Company Name 输入 -->
@@ -130,7 +130,7 @@
         createApp({
             setup() {
                 // 数据状态
-                const newTargetUrls = ref('');
+                const newTargetUrl = ref('');
                 const newCompanyName = ref('');
                 const newStartDate = ref('');
                 const newEndDate = ref('');
@@ -170,7 +170,7 @@
                 
                 // 创建配置文件
                 const createConfigFiles = async () => {
-                    if (!newTargetUrls.value.trim() || !newCompanyName.value.trim() || !newStartDate.value || !newEndDate.value) {
+                    if (!newTargetUrl.value.trim() || !newCompanyName.value.trim() || !newStartDate.value || !newEndDate.value) {
                         addLog('错误: 请填写所有字段');
                         return;
                     }
@@ -185,7 +185,7 @@
                                 'Content-Type': 'application/json'
                             },
                             body: JSON.stringify({
-                                targetUrls: newTargetUrls.value,
+                                targetUrl: newTargetUrl.value,
                                 companyName: newCompanyName.value,
                                 startDate: newStartDate.value,
                                 endDate: newEndDate.value
@@ -196,7 +196,7 @@
                         
                         if (response.ok) {
                             addLog(result.message);
-                            newTargetUrls.value = '';
+                            newTargetUrl.value = '';
                             newCompanyName.value = '';
                             newStartDate.value = '';
                             newEndDate.value = '';
@@ -267,7 +267,7 @@
                 newEndDate.value = today.toISOString().split('T')[0];
                 
                 return {
-                    newTargetUrls,
+                    newTargetUrl,
                     newCompanyName,
                     newStartDate,
                     newEndDate,

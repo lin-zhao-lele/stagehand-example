@@ -64,8 +64,10 @@ async def main(configJson):
 
 
         config_data['titles'] = titles
+        config_data['hrefs'] = hrefs
         with open(configJson, 'w', encoding='utf-8') as f:
             json.dump(config_data, f, ensure_ascii=False, indent=4)
+
         print("✅ 标题已保存到config.json")
 
         # 打印结果

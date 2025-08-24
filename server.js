@@ -26,36 +26,34 @@ const ensureDirectories = () => {
 // 创建配置文件
 app.post('/api/config', (req, res) => {
   try {
-    const { targetUrls, companyName, startDate, endDate } = req.body;
+    const { targetUrl, companyName, startDate, endDate } = req.body;
     
-    if (!targetUrls || !companyName || !startDate || !endDate) {
-      return res.status(400).json({ error: 'Missing required fields: targetUrls, companyName, startDate, or endDate' });
+    if (!targetUrl || !companyName || !startDate || !endDate) {
+      return res.status(400).json({ error: 'Missing required fields: targetUrl, companyName, startDate, or endDate' });
     }
     
-    const urls = targetUrls.split('\n').filter(url => url.trim());
-    const createdFiles = [];
+    // 如果config.json文件已存在，先删除它
+    const configFileName = 'config.json';
+    if (fs.existsSync(configFileName)) {
+      fs.unlinkSync(configFileName);
+    }
     
-    urls.forEach((url, index) => {
-      const trimmedUrl = url.trim();
-      if (trimmedUrl) {
-        const configData = {
-          target_url: trimmedUrl,
-          companyName: companyName.trim(),
-          startDate: startDate,
-          endDate: endDate,
-          titles: []
-        };
-        
-        const filename = `config_${index + 1}.json`;
-        fs.writeFileSync(filename, JSON.stringify(configData, null, 2));
-        createdFiles.push(filename);
-      }
-    });
+    // 创建新的配置数据
+    const configData = {
+      target_url: targetUrl.trim(),
+      companyName: companyName.trim(),
+      startDate: startDate,
+      endDate: endDate,
+      titles: []
+    };
+    
+    // 写入新的config.json文件
+    fs.writeFileSync(configFileName, JSON.stringify(configData, null, 2));
     
     res.json({ 
       success: true, 
-      message: `成功创建 ${createdFiles.length} 个配置文件`,
-      files: createdFiles
+      message: '成功创建配置文件',
+      file: configFileName
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -82,30 +80,26 @@ app.get('/api/configs', (req, res) => {
 // 运行所有任务
 app.post('/api/run-tasks', async (req, res) => {
   try {
-    // 获取所有配置文件
-    const configFiles = fs.readdirSync('.')
-      .filter(file => file.startsWith('config_') && file.endsWith('.json'));
-    
-    if (configFiles.length === 0) {
-      return res.status(400).json({ error: '没有找到配置文件' });
+    // 检查config.json文件是否存在
+    const configFile = 'config.json';
+    if (!fs.existsSync(configFile)) {
+      return res.status(400).json({ error: '没有找到配置文件 config.json' });
     }
     
     console.log('开始执行所有任务...');
     
-    // 为每个配置文件执行任务
-    for (const configFile of configFiles) {
-      console.log(`处理配置文件: ${configFile}`);
-      
-      // 1. 运行 inputJson.py
-      console.log('执行 inputJson.py 任务...');
-      await runPythonScript('inputJson.py', [configFile]);
-      console.log('inputJson.py 任务完成');
-      
-      // 2. 运行 getPdfFiles.py
-      console.log('执行 getPdfFiles.py 任务...');
-      await runPythonScript('getPdfFiles.py', [configFile]);
-      console.log('getPdfFiles.py 任务完成');
-    }
+    // 处理配置文件
+    console.log(`处理配置文件: ${configFile}`);
+    
+    // 1. 运行 inputJson.py
+    console.log('执行 inputJson.py 任务...');
+    await runPythonScript('inputJson.py', [configFile]);
+    console.log('inputJson.py 任务完成');
+    
+    // 2. 运行 getPdfFiles.py
+    console.log('执行 getPdfFiles.py 任务...');
+    await runPythonScript('getPdfFiles.py', [configFile]);
+    console.log('getPdfFiles.py 任务完成');
     
     // 3. 移动PDF文件从downloads到data目录
     console.log('移动PDF文件从downloads到data目录...');

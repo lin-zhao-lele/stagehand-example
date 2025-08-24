@@ -132,9 +132,9 @@ def main(pdf_file_path=None):
     """
     if pdf_file_path:
         # 处理指定的PDF文件
-        # pdf_path = Path(pdf_file_path)
-        # call_gemini_analyze_pdf(pdf_path)
-        call_gemini_analyze_pdf_test(pdf_file_path)
+        pdf_path = Path(pdf_file_path)
+        call_gemini_analyze_pdf(pdf_path)
+        # call_gemini_analyze_pdf_test(pdf_file_path)
 
     else:
         # 如果没有提供文件路径，则处理data目录下的所有PDF文件

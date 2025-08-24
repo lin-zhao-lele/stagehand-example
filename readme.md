@@ -48,3 +48,8 @@ node server.js
 ## 版本说明
  version 0.1.X 不带web UI
  version 0.2.X 带js webUI 初始版本 有问题 能run 
+
+
+## 测试
+https://www.cninfo.com.cn/new/disclosure/stock?orgId=gssz0002031&stockCode=002031#latestAnnouncement
+巨轮智能
