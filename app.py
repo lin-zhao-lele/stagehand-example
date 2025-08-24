@@ -47,9 +47,13 @@ async def main():
         print("🔍 正在提取页面内容...")
         try:
             # 先获取页面的文本内容进行调试
-            page_content = await page.extract(instruction="提取页面的文本内容")
-            print("📄 页面内容预览:", str(page_content)[:200] + "..." if len(str(page_content)) > 200 else page_content)
-            
+            # page_content = await page.extract(instruction="提取页面的文本内容")
+            # print("📄 页面内容预览:", str(page_content)[:200] + "..." if len(str(page_content)) > 200 else page_content)
+
+            urllinks  = await page.extract(
+                instruction="提取所有包含onclick的超链接标签 "
+            )
+
             # 尝试提取文章
             articles = await page.extract(
                 instruction="找到页面中所有标题包含'巨能智能'的文章，提取它们的标题和链接地址"
