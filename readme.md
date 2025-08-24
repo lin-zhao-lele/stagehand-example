@@ -1,10 +1,10 @@
 # 使用 uv
 uv venv .venv
 source .venv/bin/activate  # Linux/Mac
-uv pip install stagehand python-dotenv
+uv pip install stagehand python-dotenv google-generativeai
 
 # 或使用 pip
-pip install stagehand python-dotenv
+pip install stagehand python-dotenv google-generativeai
 
 # 完整安装playwright
 python -m playwright install

@@ -37,7 +37,8 @@ async def main():
 
         # 找到文章 "巨轮智能：2025年半年度报告" 并保存它
         title = '巨轮智能：2025年半年度报告'
-        await page.act(f"找到文章'{title}'的链接并保存链接内容到本地")
+
+        await savePDF(page, title)
 
         
         print("✅ PDF下载完成")
@@ -47,6 +48,9 @@ async def main():
     finally:
         # 确保关闭Stagehand
         await stagehand.close()
+
+async def savePDF(page, title):
+    await page.act(f"找到文章'{title}'的链接并保存链接内容到本地")
 
 if __name__ == "__main__":
     asyncio.run(main())
