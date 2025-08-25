@@ -10,7 +10,15 @@
 <body class="bg-gray-100">
     <div id="app" class="min-h-screen py-8">
         <div class="max-w-6xl mx-auto px-4">
-            <h1 class="text-3xl font-bold text-center mb-8 text-gray-800">上市公司公告分析助手</h1>
+            <div class="flex justify-between items-center mb-6">
+                <h1 class="text-3xl font-bold text-center text-gray-800">上市公司公告分析助手</h1>
+                <div class="flex items-center space-x-4">
+                    <span class="text-gray-600">欢迎, <span id="username">{{ username }}</span></span>
+                    <button @click="logout" class="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-3 rounded text-sm focus:outline-none focus:shadow-outline">
+                        登出
+                    </button>
+                </div>
+            </div>
             
             <!-- 配置文件创建区域 -->
             <div class="bg-white rounded-lg shadow-md p-6 mb-8">
@@ -203,6 +211,52 @@
                 const runCompleted = ref(false);
                 const logs = ref([]);
                 const logContainer = ref(null);
+                const username = ref('');
+                
+                // 检查登录状态
+                const checkAuthStatus = async () => {
+                    try {
+                        const response = await fetch('/api/auth-status');
+                        const result = await response.json();
+                        
+                        if (result.authenticated) {
+                            username.value = result.username;
+                        } else {
+                            // 未登录，重定向到登录页面
+                            window.location.href = '/login.html';
+                        }
+                    } catch (error) {
+                        console.error('检查登录状态失败:', error);
+                        // 出错时重定向到登录页面
+                        window.location.href = '/login.html';
+                    }
+                };
+                
+                // 页面加载时检查登录状态
+                checkAuthStatus();
+                
+                // 登出功能
+                const logout = async () => {
+                    try {
+                        const response = await fetch('/api/logout', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            }
+                        });
+                        
+                        const result = await response.json();
+                        
+                        if (result.success) {
+                            // 登出成功，重定向到登录页面
+                            window.location.href = '/login.html';
+                        } else {
+                            console.error('登出失败:', result.error);
+                        }
+                    } catch (error) {
+                        console.error('登出请求失败:', error);
+                    }
+                };
                 
                 // Agent状态 (绿色默认，红色运行中)
                 const agentStatus = reactive({
@@ -540,6 +594,7 @@
                     runCompleted,
                     logs,
                     logContainer,
+                    username,
                     agentStatus,
                     createConfigFiles,
                     runAllTasks,
@@ -547,7 +602,8 @@
                     downloadFiles,
                     clearDataFiles,
                     addLog,
-                    setAgentStatus
+                    setAgentStatus,
+                    logout
                 };
             }
         }).mount('#app');

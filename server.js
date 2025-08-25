@@ -4,14 +4,53 @@ const bodyParser = require('body-parser');
 const { spawn } = require('child_process');
 const fs = require('fs');
 const path = require('path');
+const session = require('express-session');
+require('dotenv').config();
+
+// 存储登录尝试记录的对象（在生产环境中应使用数据库或Redis）
+const loginAttempts = {};
+const MAX_ATTEMPTS = 5;
+const LOCKOUT_DURATION = 30 * 60 * 1000; // 30分钟
 
 const app = express();
-const PORT = 3000;
+const PORT = 1501;
 
 // 中间件
 app.use(cors());
 app.use(bodyParser.json());
 app.use(express.static('public'));
+
+// Session配置
+app.use(session({
+  secret: 'stagehand-secret-key',
+  resave: false,
+  saveUninitialized: true,
+  cookie: { secure: false } // 在生产环境中，如果使用HTTPS，应设置为true
+}));
+
+// 登录认证中间件
+const requireAuth = (req, res, next) => {
+  // 如果是登录页面、登录API、登出API或静态文件，不需要认证
+  if (req.path === '/login.html' || req.path === '/api/login' || req.path === '/api/logout' || req.path === '/api/auth-status') {
+    return next();
+  }
+  
+  // 对于静态文件（CSS, JS, 图片等），不需要认证
+  if (req.path.endsWith('.css') || req.path.endsWith('.js') || req.path.endsWith('.png') || req.path.endsWith('.jpg') || req.path.endsWith('.jpeg') || req.path.endsWith('.gif') || req.path.endsWith('.ico')) {
+    return next();
+  }
+  
+  // 检查用户是否已登录
+  if (req.session && req.session.authenticated) {
+    return next();
+  } else {
+    // 未登录，返回401状态码
+    return res.status(401).json({ error: '未授权访问，请先登录' });
+  }
+};
+
+// 应用认证中间件到所有路由
+app.use(requireAuth);
 
 // 确保必要的目录存在
 const ensureDirectories = () => {
@@ -22,6 +61,109 @@ const ensureDirectories = () => {
     }
   });
 };
+
+// 登录API
+app.post('/api/login', (req, res) => {
+  try {
+    const { username, password } = req.body;
+    const clientIP = req.ip || req.connection.remoteAddress;
+    const attemptKey = `${username}-${clientIP}`;
+    
+    // 检查是否被锁定
+    if (loginAttempts[attemptKey] && loginAttempts[attemptKey].lockedUntil) {
+      const lockoutTime = new Date(loginAttempts[attemptKey].lockedUntil);
+      const now = new Date();
+      
+      if (now < lockoutTime) {
+        const minutesLeft = Math.ceil((lockoutTime - now) / (60 * 1000));
+        return res.status(429).json({ 
+          success: false, 
+          error: `账户已被锁定，请在${minutesLeft}分钟后重试` 
+        });
+      } else {
+        // 锁定期已过，重置尝试次数
+        loginAttempts[attemptKey] = { attempts: 0, lockedUntil: null };
+      }
+    }
+    
+    // 从.env文件读取用户名和密码
+    const envUsername = process.env.USERNAME || 'lan';
+    const envPassword = process.env.PASSWORD; // 不使用默认值，如果环境变量未设置则为undefined
+    
+    // 验证用户名和密码
+    if (username === envUsername && password === envPassword) {
+      // 登录成功，重置尝试次数并设置session
+      loginAttempts[attemptKey] = { attempts: 0, lockedUntil: null };
+      req.session.authenticated = true;
+      req.session.username = username;
+      
+      res.json({ 
+        success: true, 
+        message: '登录成功',
+        username: username
+      });
+    } else {
+      // 登录失败，增加尝试次数
+      if (!loginAttempts[attemptKey]) {
+        loginAttempts[attemptKey] = { attempts: 0, lockedUntil: null };
+      }
+      
+      loginAttempts[attemptKey].attempts += 1;
+      
+      // 检查是否达到最大尝试次数
+      if (loginAttempts[attemptKey].attempts >= MAX_ATTEMPTS) {
+        // 锁定账户30分钟
+        const lockoutTime = new Date(Date.now() + LOCKOUT_DURATION);
+        loginAttempts[attemptKey].lockedUntil = lockoutTime;
+        
+        return res.status(429).json({ 
+          success: false, 
+          error: '登录失败次数过多，账户已被锁定30分钟' 
+        });
+      } else {
+        // 返回剩余尝试次数
+        const remainingAttempts = MAX_ATTEMPTS - loginAttempts[attemptKey].attempts;
+        res.status(401).json({ 
+          success: false, 
+          error: `用户名或密码错误，您还有${remainingAttempts}次尝试机会` 
+        });
+      }
+    }
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 登出API
+app.post('/api/logout', (req, res) => {
+  try {
+    // 销毁session
+    req.session.destroy((err) => {
+      if (err) {
+        return res.status(500).json({ error: '登出失败' });
+      }
+      
+      res.json({ 
+        success: true, 
+        message: '登出成功' 
+      });
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 检查登录状态API
+app.get('/api/auth-status', (req, res) => {
+  if (req.session && req.session.authenticated) {
+    res.json({ 
+      authenticated: true, 
+      username: req.session.username 
+    });
+  } else {
+    res.json({ authenticated: false });
+  }
+});
 
 // 创建配置文件
 app.post('/api/config', (req, res) => {

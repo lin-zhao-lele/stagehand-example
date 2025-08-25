@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录 - 上市公司公告分析助手</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+</head>
+<body class="bg-gray-100">
+    <div id="app" class="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-md w-full space-y-8">
+            <div>
+                <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
+                    登录到您的账户
+                </h2>
+            </div>
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <form class="mt-8 space-y-6" @submit.prevent="login">
+                    <div class="rounded-md shadow-sm -space-y-px">
+                        <div>
+                            <label for="username" class="sr-only">用户名</label>
+                            <input id="username" name="username" type="text" required class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm" placeholder="用户名" v-model="username">
+                        </div>
+                        <div>
+                            <label for="password" class="sr-only">密码</label>
+                            <input id="password" name="password" type="password" required class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm" placeholder="密码" v-model="password">
+                        </div>
+                    </div>
+
+                    <div v-if="errorMessage" class="text-red-500 text-sm text-center">
+                        {{ errorMessage }}
+                    </div>
+
+                    <div>
+                        <button type="submit" :disabled="isLoggingIn" class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" :class="{'opacity-50 cursor-not-allowed': isLoggingIn}">
+                            <span class="absolute left-0 inset-y-0 flex items-center pl-3">
+                                <svg class="h-5 w-5 text-indigo-500 group-hover:text-indigo-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                    <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
+                                </svg>
+                            </span>
+                            {{ isLoggingIn ? '登录中...' : '登录' }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref } = Vue;
+        
+        createApp({
+            setup() {
+                const username = ref('');
+                const password = ref('');
+                const errorMessage = ref('');
+                const isLoggingIn = ref(false);
+                
+                const login = async () => {
+                    if (!username.value.trim() || !password.value.trim()) {
+                        errorMessage.value = '请输入用户名和密码';
+                        return;
+                    }
+                    
+                    isLoggingIn.value = true;
+                    errorMessage.value = '';
+                    
+                    try {
+                        const response = await fetch('/api/login', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                username: username.value,
+                                password: password.value
+                            })
+                        });
+                        
+                        const result = await response.json();
+                        
+                        if (response.ok && result.success) {
+                            // 登录成功，重定向到主页面
+                            window.location.href = '/';
+                        } else {
+                            errorMessage.value = result.error || '登录失败';
+                        }
+                    } catch (error) {
+                        errorMessage.value = '登录请求失败，请稍后重试';
+                    } finally {
+                        isLoggingIn.value = false;
+                    }
+                };
+                
+                return {
+                    username,
+                    password,
+                    errorMessage,
+                    isLoggingIn,
+                    login
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
