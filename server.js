@@ -342,6 +342,107 @@ const movePdfFiles = () => {
   }
 };
 
+// 打包并下载data目录下的文件
+app.post('/api/download-files', (req, res) => {
+  try {
+    const { includePdf } = req.body; // 是否包含PDF文件
+    
+    // 检查data目录是否存在
+    const dataDir = './data';
+    if (!fs.existsSync(dataDir)) {
+      return res.status(404).json({ error: 'Data directory not found' });
+    }
+    
+    // 获取data目录下的所有文件
+    const files = fs.readdirSync(dataDir);
+    
+    // 根据参数过滤文件
+    let filteredFiles = files.filter(file => file.endsWith('.md')); // 默认只包含md文件
+    if (includePdf) {
+      // 如果includePdf为true，则也包含PDF文件
+      filteredFiles = files.filter(file => file.endsWith('.md') || file.endsWith('.pdf') || file.endsWith('.PDF'));
+    }
+    
+    if (filteredFiles.length === 0) {
+      return res.status(404).json({ error: 'No files found to download' });
+    }
+    
+    // 创建临时zip文件
+    const zip = new (require('adm-zip'))();
+    
+    // 添加文件到zip
+    filteredFiles.forEach(file => {
+      const filePath = path.join(dataDir, file);
+      if (fs.existsSync(filePath)) {
+        zip.addLocalFile(filePath);
+      }
+    });
+    
+    // 生成zip文件名
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const zipFileName = `analysis_results_${timestamp}.zip`;
+    
+    // 设置响应头
+    res.writeHead(200, {
+      'Content-Type': 'application/zip',
+      'Content-Disposition': `attachment; filename="${zipFileName}"`
+    });
+    
+    // 发送zip文件内容
+    const zipBuffer = zip.toBuffer();
+    res.end(zipBuffer);
+    
+  } catch (error) {
+    console.error('打包下载文件时出错:', error);
+    // 检查响应头是否已经发送
+    if (!res.headersSent) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+});
+
+// 删除data目录下的文件
+app.post('/api/clear-data-files', (req, res) => {
+  try {
+    const { includePdf } = req.body; // 是否包含PDF文件
+    
+    // 检查data目录是否存在
+    const dataDir = './data';
+    if (!fs.existsSync(dataDir)) {
+      return res.status(404).json({ error: 'Data directory not found' });
+    }
+    
+    // 获取data目录下的所有文件
+    const files = fs.readdirSync(dataDir);
+    
+    // 根据参数过滤文件
+    let filesToDelete = files.filter(file => file.endsWith('.md')); // 默认只删除md文件
+    if (includePdf) {
+      // 如果includePdf为true，则也删除PDF文件
+      filesToDelete = files.filter(file => file.endsWith('.md') || file.endsWith('.pdf') || file.endsWith('.PDF'));
+    }
+    
+    // 删除文件
+    let deletedCount = 0;
+    filesToDelete.forEach(file => {
+      const filePath = path.join(dataDir, file);
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+        deletedCount++;
+      }
+    });
+    
+    res.json({ 
+      success: true, 
+      message: `成功删除 ${deletedCount} 个文件`,
+      deletedCount: deletedCount
+    });
+  } catch (error) {
+    console.error('删除文件时出错:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // 启动服务器
 ensureDirectories();
 app.listen(PORT, () => {
