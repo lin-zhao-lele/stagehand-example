@@ -26,10 +26,10 @@ const ensureDirectories = () => {
 // 创建配置文件
 app.post('/api/config', (req, res) => {
   try {
-    const { targetUrl, companyName, startDate, endDate } = req.body;
+    const { targetUrl, startDate, endDate } = req.body;
     
-    if (!targetUrl || !companyName || !startDate || !endDate) {
-      return res.status(400).json({ error: 'Missing required fields: targetUrl, companyName, startDate, or endDate' });
+    if (!targetUrl || !startDate || !endDate) {
+      return res.status(400).json({ error: 'Missing required fields: targetUrl, startDate, or endDate' });
     }
     
     // 如果config.json文件已存在，先删除它
@@ -38,10 +38,9 @@ app.post('/api/config', (req, res) => {
       fs.unlinkSync(configFileName);
     }
     
-    // 创建新的配置数据
+    // 创建新的配置数据（不包含companyName字段）
     const configData = {
       target_url: targetUrl.trim(),
-      companyName: companyName.trim(),
       startDate: startDate,
       endDate: endDate,
       titles: []

@@ -19,7 +19,7 @@
                 <!-- Target URL 输入 -->
                 <div class="mb-4">
                     <label class="block text-gray-700 text-sm font-bold mb-2" for="targetUrl">
-                        目标URL
+                        网站数据来源
                     </label>
                     <input 
                         type="url" 
@@ -30,44 +30,32 @@
                     >
                 </div>
                 
-                <!-- Company Name 输入 -->
-                <div class="mb-4">
-                    <label class="block text-gray-700 text-sm font-bold mb-2" for="companyName">
-                        公司名称
-                    </label>
-                    <input 
-                        type="text" 
-                        id="companyName" 
-                        v-model="newCompanyName" 
-                        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                        placeholder="输入公司名称"
-                    >
-                </div>
                 
-                <!-- Start Date 输入 -->
-                <div class="mb-4">
-                    <label class="block text-gray-700 text-sm font-bold mb-2" for="startDate">
-                        开始日期
-                    </label>
-                    <input 
-                        type="date" 
-                        id="startDate" 
-                        v-model="newStartDate" 
-                        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                    >
-                </div>
-                
-                <!-- End Date 输入 -->
-                <div class="mb-6">
-                    <label class="block text-gray-700 text-sm font-bold mb-2" for="endDate">
-                        结束日期
-                    </label>
-                    <input 
-                        type="date" 
-                        id="endDate" 
-                        v-model="newEndDate" 
-                        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                    >
+                <!-- Date Range 输入 -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <div>
+                        <label class="block text-gray-700 text-sm font-bold mb-2" for="startDate">
+                            开始日期
+                        </label>
+                        <input 
+                            type="date" 
+                            id="startDate" 
+                            v-model="newStartDate" 
+                            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                        >
+                    </div>
+                    
+                    <div>
+                        <label class="block text-gray-700 text-sm font-bold mb-2" for="endDate">
+                            结束日期
+                        </label>
+                        <input 
+                            type="date" 
+                            id="endDate" 
+                            v-model="newEndDate" 
+                            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                        >
+                    </div>
                 </div>
                 
                 <!-- 创建按钮 -->
@@ -131,7 +119,6 @@
             setup() {
                 // 数据状态
                 const newTargetUrl = ref('');
-                const newCompanyName = ref('');
                 const newStartDate = ref('');
                 const newEndDate = ref('');
                 const isProcessing = ref(false);
@@ -170,7 +157,7 @@
                 
                 // 创建配置文件
                 const createConfigFiles = async () => {
-                    if (!newTargetUrl.value.trim() || !newCompanyName.value.trim() || !newStartDate.value || !newEndDate.value) {
+                    if (!newTargetUrl.value.trim() || !newStartDate.value || !newEndDate.value) {
                         addLog('错误: 请填写所有字段');
                         return;
                     }
@@ -186,7 +173,6 @@
                             },
                             body: JSON.stringify({
                                 targetUrl: newTargetUrl.value,
-                                companyName: newCompanyName.value,
                                 startDate: newStartDate.value,
                                 endDate: newEndDate.value
                             })
@@ -197,7 +183,6 @@
                         if (response.ok) {
                             addLog(result.message);
                             newTargetUrl.value = '';
-                            newCompanyName.value = '';
                             newStartDate.value = '';
                             newEndDate.value = '';
                         } else {
@@ -268,7 +253,6 @@
                 
                 return {
                     newTargetUrl,
-                    newCompanyName,
                     newStartDate,
                     newEndDate,
                     isProcessing,
