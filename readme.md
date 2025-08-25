@@ -61,6 +61,8 @@ uv pip install stagehand python-dotenv google-generativeai PyPDF2 openai
 
 # 安装Playwright浏览器依赖
 python -m playwright install
+可能还需要运行
+playwright install-deps
 ```
 
 ### 3. 设置Node.js环境
