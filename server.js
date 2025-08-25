@@ -116,7 +116,7 @@ app.post('/api/run-tasks', async (req, res) => {
     for (const pdfFile of pdfFiles) {
       const fullPath = path.join('./data', pdfFile);
       console.log(`处理PDF文件: ${pdfFile}`);
-      await runPythonScript('callGemini.py', [fullPath]);
+      await runPythonScript('callLLM.py', [fullPath]);
       console.log(`PDF文件处理完成: ${pdfFile}`);
     }
     

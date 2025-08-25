@@ -45,6 +45,43 @@ node server.js
 - 实时状态显示：显示各个agent的运行状态
 - 日志显示：在Console区域显示任务执行日志
 
+## 大语言模型(LLM)支持
+本项目支持多种大语言模型：
+- Gemini (默认)
+- DeepSeek
+
+### 如何切换不同的LLM
+
+1. **使用Gemini (默认)**
+   - 在 .env 文件中设置: `LLM_PROVIDER=gemini`
+   - 确保已配置Gemini API密钥: `GEMINI_API_KEY=your_api_key_here`
+   - 可选配置模型名称: `GEMINI_MODEL_NAME=gemini-2.0-flash` (默认值)
+
+2. **使用DeepSeek**
+   - 在 .env 文件中设置: `LLM_PROVIDER=deepseek`
+   - 配置DeepSeek API密钥: `DEEPSEEK_API_KEY=your_api_key_here`
+   - 可选配置模型名称: `DEEPSEEK_MODEL_NAME=deepseek-chat` (默认值)
+
+### .env配置示例
+
+```env
+# Gemini配置 (默认)
+LLM_PROVIDER=gemini
+GEMINI_API_KEY=AIzaSyDDkyznSm4lWHUpJ1MoteHysANqG797KuQ
+GEMINI_MODEL_NAME=gemini-2.0-flash
+
+# DeepSeek配置 (可选)
+DEEPSEEK_API_KEY=sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+DEEPSEEK_MODEL_NAME=deepseek-chat
+```
+
+### 切换步骤
+1. 打开项目根目录下的 `.env` 文件
+2. 修改 `LLM_PROVIDER` 的值为想要使用的LLM提供商
+3. 确保相应提供商的API密钥已正确配置
+4. 保存文件并重启应用程序
+5. 运行任务时将自动使用配置的LLM提供商
+
 ## 版本说明
  version 0.1.X 不带web UI
  version 0.2.X 带js webUI 初始版本 有问题 能run 

@@ -23,16 +23,26 @@
 ## 2. 大语言模型分析
 
 ### 功能说明
-该脚本用于调用Gemini-2.0-flash模型分析PDF文档内容，并将分析结果保存为Markdown格式文件。
+该脚本用于调用不同的大语言模型(Gemini、DeepSeek、ModelScope)分析PDF文档内容，并将分析结果保存为Markdown格式文件。通过环境变量配置可以灵活切换不同的LLM提供商。
 
 ### 主要功能
+- 支持多种大语言模型(Gemini、DeepSeek、ModelScope)
 - 读取配置文件获取分析请求内容
-- 上传PDF文件到Gemini服务
-- 调用Gemini模型分析PDF内容
+- 上传PDF文件到LLM服务
+- 调用LLM模型分析PDF内容
 - 将分析结果格式化为Markdown并保存
 
 ### 接口说明
-- `call_gemini_analyze_pdf(pdf_path)`: 分析PDF文档的主要函数
+- `call_llm_analyze_pdf(pdf_path)`: 根据配置选择LLM并分析PDF文档的主要函数
+  - 参数: `pdf_path` (Path) - PDF文件路径
+  - 返回值: 无
+- `call_gemini_analyze_pdf(pdf_path)`: 使用Gemini分析PDF文档的函数
+  - 参数: `pdf_path` (Path) - PDF文件路径
+  - 返回值: 无
+- `call_deepseek_analyze_pdf(pdf_path)`: 使用DeepSeek分析PDF文档的函数
+  - 参数: `pdf_path` (Path) - PDF文件路径
+  - 返回值: 无
+- `call_modelscope_analyze_pdf(pdf_path)`: 使用ModelScope分析PDF文档的函数
   - 参数: `pdf_path` (Path) - PDF文件路径
   - 返回值: 无
 - `call_gemini_analyze_pdf_test(pdf_path)`: 测试函数，仅打印处理信息
