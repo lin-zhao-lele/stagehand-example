@@ -103,9 +103,9 @@
             <!-- Console日志区域 -->
             <div class="bg-gray-800 rounded-lg shadow-md p-6">
                 <h2 class="text-xl font-semibold mb-4 text-gray-100">执行日志</h2>
-                <div ref="logContainer" class="bg-black rounded p-4 h-64 overflow-y-auto font-mono text-sm text-green-400">
-                    <div v-for="(log, index) in logs" :key="index" class="mb-1">
-                        $ {{ log }}
+                <div ref="logContainer" class="bg-black rounded p-4 h-96 overflow-y-auto font-mono text-sm text-green-400">
+                    <div v-for="(log, index) in logs" :key="index" class="mb-1" :class="{'text-white text-xs': log.type === 'console'}">
+                        <span v-if="log.type === 'console'">› </span>{{ log.message }}
                     </div>
                 </div>
             </div>
@@ -135,9 +135,12 @@
                 });
                 
                 // 添加日志
-                const addLog = (message) => {
+                const addLog = (message, type = 'normal') => {
                     const timestamp = new Date().toLocaleTimeString();
-                    logs.value.push(`[${timestamp}] ${message}`);
+                    logs.value.push({
+                        message: `[${timestamp}] ${message}`,
+                        type: type
+                    });
                     // 保持最多200条日志
                     if (logs.value.length > 200) {
                         logs.value.shift();
@@ -186,10 +189,10 @@
                             newStartDate.value = '';
                             newEndDate.value = '';
                         } else {
-                            addLog(`创建配置文件失败: ${result.error}`);
+                            addLog(`创建配置文件失败: ${result.error}`, 'console');
                         }
                     } catch (error) {
-                        addLog(`创建配置文件失败: ${error.message}`);
+                        addLog(`创建配置文件失败: ${error.message}`, 'console');
                     } finally {
                         isProcessing.value = false;
                     }
@@ -200,13 +203,13 @@
                     isRunning.value = true;
                     runCompleted.value = false;
                     logs.value = []; // 清空之前的日志
-                    addLog('开始执行所有任务...');
+                    addLog('开始执行所有任务...', 'console');
                     
                     try {
                         // 显示正在运行的状态
                         setAgentStatus('inputJson', 'running');
-                        addLog('执行 inputJson.py 任务...');
                         
+                        // 使用fetch和ReadableStream来接收服务器发送的实时日志
                         const response = await fetch('/api/run-tasks', {
                             method: 'POST',
                             headers: {
@@ -214,28 +217,59 @@
                             }
                         });
                         
-                        const result = await response.json();
+                        const reader = response.body.getReader();
+                        const decoder = new TextDecoder();
                         
-                        if (response.ok) {
-                            // 更新各个agent的状态
-                            setAgentStatus('inputJson', 'idle');
-                            setAgentStatus('getPdfFiles', 'idle');
-                            setAgentStatus('callGemini', 'idle');
+                        while (true) {
+                            const { done, value } = await reader.read();
+                            if (done) break;
                             
-                            addLog(result.message);
-                            runCompleted.value = true;
-                        } else {
-                            addLog(`任务执行失败: ${result.error}`);
-                            setAgentStatus('inputJson', 'idle');
-                            setAgentStatus('getPdfFiles', 'idle');
-                            setAgentStatus('callGemini', 'idle');
+                            const text = decoder.decode(value);
+                            const lines = text.split('\n');
+                            
+                            for (const line of lines) {
+                                if (line.startsWith('data: ')) {
+                                    try {
+                                        const data = JSON.parse(line.slice(6));
+                                        if (data.type === 'start') {
+                                            addLog(data.message, 'console');
+                                        } else if (data.type === 'info') {
+                                            addLog(data.message, 'console');
+                                        } else if (data.type === 'stdout') {
+                                            addLog(`[stdout] ${data.message}`, 'console');
+                                        } else if (data.type === 'stderr') {
+                                            addLog(`[stderr] ${data.message}`, 'console');
+                                        } else if (data.type === 'end') {
+                                            addLog(data.message, 'console');
+                                            runCompleted.value = true;
+                                        } else if (data.type === 'error') {
+                                            addLog(`错误: ${data.message}`);
+                                        }
+                                        
+                                        // 根据执行阶段更新agent状态
+                                        if (data.message && data.message.includes('预处理阶段')) {
+                                            setAgentStatus('inputJson', 'running');
+                                        } else if (data.message && data.message.includes('从服务器获取pdf文件')) {
+                                            setAgentStatus('inputJson', 'idle');
+                                            setAgentStatus('getPdfFiles', 'running');
+                                        } else if (data.message && data.message.includes('大语言模型分析')) {
+                                            setAgentStatus('getPdfFiles', 'idle');
+                                            setAgentStatus('callGemini', 'running');
+                                        }
+                                    } catch (e) {
+                                        // 忽略解析错误
+                                    }
+                                }
+                            }
                         }
-                    } catch (error) {
-                        addLog(`任务执行失败: ${error.message}`);
+                        
+                        // 任务完成后的清理工作
+                        isRunning.value = false;
                         setAgentStatus('inputJson', 'idle');
                         setAgentStatus('getPdfFiles', 'idle');
                         setAgentStatus('callGemini', 'idle');
-                    } finally {
+                    } catch (error) {
+                        addLog(`任务执行失败: ${error.message}`, 'console');
                         isRunning.value = false;
                         setAgentStatus('inputJson', 'idle');
                         setAgentStatus('getPdfFiles', 'idle');

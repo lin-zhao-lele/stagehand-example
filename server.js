@@ -76,56 +76,101 @@ app.get('/api/configs', (req, res) => {
   }
 });
 
+// 清空目录的辅助函数
+const clearDirectory = (dirPath) => {
+  try {
+    if (fs.existsSync(dirPath)) {
+      const files = fs.readdirSync(dirPath);
+      for (const file of files) {
+        const filePath = path.join(dirPath, file);
+        fs.unlinkSync(filePath);
+      }
+      console.log(`已清空目录: ${dirPath}`);
+    }
+  } catch (error) {
+    console.error(`清空目录 ${dirPath} 失败:`, error);
+    throw error;
+  }
+};
+
 // 运行所有任务
 app.post('/api/run-tasks', async (req, res) => {
+  // 设置SSE响应头
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache',
+    'Connection': 'keep-alive',
+    'Access-Control-Allow-Origin': '*'
+  });
+  
+  // 存储响应对象用于发送实时日志
+  currentResponse = res;
+  
   try {
+    // 发送开始消息
+    res.write(`data: ${JSON.stringify({ type: 'start', message: '开始执行所有任务...' })}\n\n`);
+    
+    // 清空downloads和data目录
+    res.write(`data: ${JSON.stringify({ type: 'info', message: '清空downloads目录...' })}\n\n`);
+    clearDirectory('./downloads');
+    res.write(`data: ${JSON.stringify({ type: 'info', message: '清空data目录...' })}\n\n`);
+    clearDirectory('./data');
+    
     // 检查config.json文件是否存在
     const configFile = 'config.json';
     if (!fs.existsSync(configFile)) {
-      return res.status(400).json({ error: '没有找到配置文件 config.json' });
+      res.write(`data: ${JSON.stringify({ type: 'error', message: '没有找到配置文件 config.json' })}\n\n`);
+      res.end();
+      return;
     }
     
-    console.log('开始执行所有任务...');
-    
-    // 处理配置文件
-    console.log(`处理配置文件: ${configFile}`);
+    res.write(`data: ${JSON.stringify({ type: 'info', message: `处理配置文件: ${configFile}` })}\n\n`);
     
     // 1. 运行 inputJson.py (预处理阶段)
-    console.log('执行 预处理阶段 任务...');
+    res.write(`data: ${JSON.stringify({ type: 'info', message: '执行 预处理阶段 任务...' })}\n\n`);
     await runPythonScript('inputJson.py', [configFile]);
-    console.log('预处理阶段 任务完成');
+    res.write(`data: ${JSON.stringify({ type: 'info', message: '预处理阶段 任务完成' })}\n\n`);
     
     // 2. 运行 getPdfFiles.py (从服务器获取pdf文件)
-    console.log('执行 从服务器获取pdf文件 任务...');
+    res.write(`data: ${JSON.stringify({ type: 'info', message: '执行 从服务器获取pdf文件 任务...' })}\n\n`);
     await runPythonScript('getPdfFiles.py', [configFile]);
-    console.log('从服务器获取pdf文件 任务完成');
+    res.write(`data: ${JSON.stringify({ type: 'info', message: '从服务器获取pdf文件 任务完成' })}\n\n`);
     
     // 3. 移动PDF文件从downloads到data目录
-    console.log('移动PDF文件从downloads到data目录...');
+    res.write(`data: ${JSON.stringify({ type: 'info', message: '移动PDF文件从downloads到data目录...' })}\n\n`);
     movePdfFiles();
-    console.log('PDF文件移动完成');
+    res.write(`data: ${JSON.stringify({ type: 'info', message: 'PDF文件移动完成' })}\n\n`);
     
     // 4. 处理data目录下的PDF文件 (大语言模型分析)
-    console.log('处理data目录下的PDF文件 (大语言模型分析)...');
+    res.write(`data: ${JSON.stringify({ type: 'info', message: '处理data目录下的PDF文件 (大语言模型分析)...' })}\n\n`);
     const pdfFiles = fs.readdirSync('./data')
       .filter(file => file.endsWith('.pdf') || file.endsWith('.PDF'));
     
-    console.log(`找到 ${pdfFiles.length} 个PDF文件`);
+    res.write(`data: ${JSON.stringify({ type: 'info', message: `找到 ${pdfFiles.length} 个PDF文件` })}\n\n`);
     
     for (const pdfFile of pdfFiles) {
       const fullPath = path.join('./data', pdfFile);
-      console.log(`处理PDF文件: ${pdfFile}`);
+      res.write(`data: ${JSON.stringify({ type: 'info', message: `处理PDF文件: ${pdfFile}` })}\n\n`);
       await runPythonScript('callLLM.py', [fullPath]);
-      console.log(`PDF文件处理完成: ${pdfFile}`);
+      res.write(`data: ${JSON.stringify({ type: 'info', message: `PDF文件处理完成: ${pdfFile}` })}\n\n`);
     }
     
-    console.log('所有任务执行完成');
-    res.json({ success: true, message: '所有任务执行完成' });
+    res.write(`data: ${JSON.stringify({ type: 'end', message: '所有任务执行完成' })}\n\n`);
+    res.end();
   } catch (error) {
     console.error('任务执行失败:', error);
-    res.status(500).json({ error: error.message });
+    if (currentResponse) {
+      currentResponse.write(`data: ${JSON.stringify({ type: 'error', message: `任务执行失败: ${error.message}` })}\n\n`);
+      currentResponse.end();
+    }
+  } finally {
+    // 清除当前响应对象
+    currentResponse = null;
   }
 });
+
+// 存储客户端响应对象以发送实时日志
+let currentResponse = null;
 
 // 运行Python脚本的辅助函数
 const runPythonScript = (scriptName, args = []) => {
@@ -137,16 +182,26 @@ const runPythonScript = (scriptName, args = []) => {
     child.stdout.on('data', (data) => {
       const output = data.toString().trim();
       console.log(`[stdout] ${output}`);
-      // 如果前端需要实时日志，可以在这里通过WebSocket或其他方式发送
+      // 发送实时日志到前端
+      if (currentResponse) {
+        currentResponse.write(`data: ${JSON.stringify({ type: 'stdout', message: output })}\n\n`);
+      }
     });
     
     child.stderr.on('data', (data) => {
       const error = data.toString().trim();
       console.error(`[stderr] ${error}`);
+      // 发送错误日志到前端
+      if (currentResponse) {
+        currentResponse.write(`data: ${JSON.stringify({ type: 'stderr', message: error })}\n\n`);
+      }
     });
     
     child.on('close', (code) => {
       console.log(`${scriptName} 执行完成，退出码: ${code}`);
+      if (currentResponse) {
+        currentResponse.write(`data: ${JSON.stringify({ type: 'close', code: code, script: scriptName })}\n\n`);
+      }
       if (code === 0) {
         resolve();
       } else {
@@ -156,6 +211,9 @@ const runPythonScript = (scriptName, args = []) => {
     
     child.on('error', (error) => {
       console.error(`${scriptName} 启动失败:`, error);
+      if (currentResponse) {
+        currentResponse.write(`data: ${JSON.stringify({ type: 'error', message: `${scriptName} 启动失败: ${error.message}` })}\n\n`);
+      }
       reject(new Error(`${scriptName} 启动失败: ${error.message}`));
     });
   });
