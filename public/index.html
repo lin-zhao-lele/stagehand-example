@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>配置文件管理器</title>
+    <title>上市公司公告分析助手</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
 </head>
 <body class="bg-gray-100">
     <div id="app" class="min-h-screen py-8">
         <div class="max-w-6xl mx-auto px-4">
-            <h1 class="text-3xl font-bold text-center mb-8 text-gray-800">配置文件管理器</h1>
+            <h1 class="text-3xl font-bold text-center mb-8 text-gray-800">上市公司公告分析助手</h1>
             
             <!-- 配置文件创建区域 -->
             <div class="bg-white rounded-lg shadow-md p-6 mb-8">
@@ -152,7 +152,7 @@
     </div>
 
     <script>
-        const { createApp, ref, reactive, nextTick } = Vue;
+        const { createApp, ref, reactive, nextTick, watch } = Vue;
         
         createApp({
             setup() {
@@ -236,6 +236,29 @@
                         addLog(`保存用户Prompt失败: ${error.message}`, 'console');
                     } finally {
                         isProcessing.value = false;
+                    }
+                };
+                
+                // 更新.env文件中的LLM_PROVIDER值
+                const updateLLMProvider = async (llmProvider) => {
+                    try {
+                        const response = await fetch('/api/update-env', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ llmProvider })
+                        });
+                        
+                        if (!response.ok) {
+                            const result = await response.json();
+                            throw new Error(result.error || 'Failed to update LLM provider');
+                        }
+                        
+                        const result = await response.json();
+                        addLog(`LLM提供者已更新为: ${llmProvider}`, 'console');
+                    } catch (error) {
+                        addLog(`更新LLM提供者失败: ${error.message}`, 'console');
                     }
                 };
                 
@@ -364,6 +387,13 @@
                         setAgentStatus('callGemini', 'idle');
                     }
                 };
+                
+                // 使用Vue的watch监听selectedLLM变化并更新.env文件
+                watch(selectedLLM, (newValue, oldValue) => {
+                    if (newValue !== oldValue) {
+                        updateLLMProvider(newValue);
+                    }
+                });
                 
                 // 设置默认日期为今天和30天前
                 const today = new Date();

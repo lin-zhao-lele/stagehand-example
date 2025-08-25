@@ -10,5 +10,5 @@
         "https://www.cninfo.com.cn/new/disclosure/detail?plate=szse&orgId=gssz0002031&stockCode=002031&announcementId=1222180577&announcementTime=2024-12-30 11:00",
         "https://www.cninfo.com.cn/new/disclosure/detail?plate=szse&orgId=gssz0002031&stockCode=002031&announcementId=1222180575&announcementTime=2024-12-30 11:00"
     ],
-    "require": "请分析此文档，提取关键内容并进行总结."
+    "require": "请分析此文档，提取关键内容并进行总结。另外 记录原始pdf文件的页数。"
 }

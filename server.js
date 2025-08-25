@@ -43,7 +43,7 @@ app.post('/api/config', (req, res) => {
       target_url: targetUrl.trim(),
       startDate: startDate,
       endDate: endDate,
-      require: require || "请分析此文档，提取关键内容并进行总结.",
+      require: require || "请分析此文档，提取关键内容并进行总结。",
       titles: []
     };
     
@@ -88,6 +88,39 @@ app.get('/api/config-content', (req, res) => {
     const content = fs.readFileSync(configFile, 'utf8');
     const configData = JSON.parse(content);
     res.json(configData);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 更新.env文件中的LLM_PROVIDER值
+app.post('/api/update-env', (req, res) => {
+  try {
+    const { llmProvider } = req.body;
+    
+    // 检查.env文件是否存在
+    const envFile = '.env';
+    if (!fs.existsSync(envFile)) {
+      return res.status(404).json({ error: '.env file not found' });
+    }
+    
+    // 读取.env文件内容
+    let envContent = fs.readFileSync(envFile, 'utf8');
+    
+    // 更新LLM_PROVIDER行，如果不存在则添加
+    const llmProviderLine = `LLM_PROVIDER=${llmProvider}`;
+    if (envContent.includes('LLM_PROVIDER=')) {
+      // 替换现有的LLM_PROVIDER行
+      envContent = envContent.replace(/LLM_PROVIDER=.*/, llmProviderLine);
+    } else {
+      // 添加新的LLM_PROVIDER行
+      envContent += `\n${llmProviderLine}`;
+    }
+    
+    // 写入更新后的内容到.env文件
+    fs.writeFileSync(envFile, envContent);
+    
+    res.json({ success: true, message: 'LLM provider updated successfully' });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
