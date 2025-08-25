@@ -14,9 +14,11 @@ async def save_pdf(stagehand, title, pdf_url):
     page = stagehand.page
 
     # 等待页面加载完成
-    await page.wait_for_timeout(3000)
+    await page.wait_for_timeout(5000)
 
     # 下载 PDF
+    print(f"📥 开始下载: {title}")
+    print(f"🔗 URL: {pdf_url}")
     pdf_data = await page.request.get(pdf_url)
     filepath = os.path.join(save_dir, f"{title}.pdf")
     with open(filepath, "wb") as f:
