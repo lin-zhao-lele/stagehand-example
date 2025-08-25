@@ -135,12 +135,22 @@
                         return;
                     }
                     
+                    // 验证所有URL是否都以https://www.cninfo.com.cn开头
+                    const urls = newTargetUrls.value.split('\n').filter(url => url.trim());
+                    for (let i = 0; i < urls.length; i++) {
+                        const url = urls[i].trim();
+                        if (!url) continue;
+                        
+                        if (!url.startsWith('https://www.cninfo.com.cn')) {
+                            addLog('错误: 本项目能够处理的target_url 是受限的，目前仅能处理针对https://www.cninfo.com.cn网站的请求');
+                            return;
+                        }
+                    }
+                    
                     isProcessing.value = true;
                     addLog('开始创建配置文件...');
                     
                     try {
-                        const urls = newTargetUrls.value.split('\n').filter(url => url.trim());
-                        
                         for (let i = 0; i < urls.length; i++) {
                             const url = urls[i].trim();
                             if (!url) continue;

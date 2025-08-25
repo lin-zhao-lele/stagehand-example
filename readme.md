@@ -104,6 +104,7 @@ npm start
 ## 使用说明
 
 1. 在"创建配置文件"区域输入目标URL和日期范围
+   - 注意：本项目仅支持处理针对 https://www.cninfo.com.cn 网站的请求，输入其他网站URL将无法创建配置文件
 2. 在"用户Prompt"区域输入分析要求（可选）
 3. 选择底层LLM提供商（Gemini或DeepSeek）
 4. 点击"创建配置文件"按钮
@@ -121,6 +122,17 @@ npm start
 - 在 `.env` 文件中设置: `LLM_PROVIDER=deepseek`
 - 配置DeepSeek API密钥: `DEEPSEEK_API_KEY=your_api_key_here`
 - 可选配置模型名称: `DEEPSEEK_MODEL_NAME=deepseek-chat`
+
+## URL验证机制
+
+本项目具有URL验证机制，仅支持处理针对 https://www.cninfo.com.cn 网站的请求：
+
+1. 在创建配置文件时，系统会验证所有输入的URL是否以 https://www.cninfo.com.cn 开头
+2. 如果输入的URL不符合要求，系统将拒绝创建配置文件并提示错误信息
+3. 在执行任务阶段，系统会再次验证配置文件中的target_url是否符合要求
+4. 如果发现配置文件中的target_url不是以 https://www.cninfo.com.cn 开头，程序将停止执行并报错
+
+此机制确保了系统的安全性和专一性，防止处理非目标网站的请求。
 
 ## 文件操作功能
 

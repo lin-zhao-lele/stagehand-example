@@ -42,11 +42,16 @@ def call_gemini_analyze_pdf(pdf_path):
             print(f"❌ 错误: 找不到 PDF 文件 {pdf_path}")
             return
         
-        # 读取 config.json 获取请求内容
+        # 读取 config.json 获取请求内容和验证target_url
         config_path = Path("config.json")
         if config_path.exists():
             with open(config_path, 'r', encoding='utf-8') as f:
                 config_data = json.load(f)
+                # 验证target_url是否以https://www.cninfo.com.cn开头
+                target_url = config_data.get("target_url", "")
+                if not target_url.startswith('https://www.cninfo.com.cn'):
+                    print("错误: 本项目能够处理的target_url是受限的，目前仅能处理针对https://www.cninfo.com.cn网站的请求")
+                    return
                 # 默认请求内容
                 request_content = config_data.get("require", "请分析此文档并提取关键内容。")
         else:
@@ -119,11 +124,16 @@ def call_deepseek_analyze_pdf(pdf_path):
             print(f"❌ 错误: 找不到 PDF 文件 {pdf_path}")
             return
         
-        # 读取 config.json 获取请求内容
+        # 读取 config.json 获取请求内容和验证target_url
         config_path = Path("config.json")
         if config_path.exists():
             with open(config_path, 'r', encoding='utf-8') as f:
                 config_data = json.load(f)
+                # 验证target_url是否以https://www.cninfo.com.cn开头
+                target_url = config_data.get("target_url", "")
+                if not target_url.startswith('https://www.cninfo.com.cn'):
+                    print("错误: 本项目能够处理的target_url是受限的，目前仅能处理针对https://www.cninfo.com.cn网站的请求")
+                    return
                 # 默认请求内容
                 request_content = config_data.get("require", "请分析此文档并提取关键内容。")
         else:

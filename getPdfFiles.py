@@ -27,7 +27,12 @@ async def main(configJson):
     with open(configJson, 'r', encoding='utf-8') as f:
         config_data = json.load(f)
 
+    # 验证target_url是否以https://www.cninfo.com.cn开头
     target_url = config_data['target_url']
+    if not target_url.startswith('https://www.cninfo.com.cn'):
+        print("错误: 本项目能够处理的target_url是受限的，目前仅能处理针对https://www.cninfo.com.cn网站的请求")
+        return
+        
     titles = config_data['titles']
     hrefs = config_data['hrefs']
 
