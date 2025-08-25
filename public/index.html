@@ -66,6 +66,27 @@
                 >
                     {{ isProcessing ? '处理中...' : '创建配置文件' }}
                 </button>
+                
+                <!-- 用户Prompt输入框 -->
+                <div class="mt-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="userPrompt">
+                        用户Prompt
+                    </label>
+                    <textarea 
+                        id="userPrompt" 
+                        v-model="newUserPrompt" 
+                        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                        placeholder="请分析此文档，提取关键内容并进行总结."
+                        rows="3"
+                    ></textarea>
+                    <button 
+                        @click="saveUserPrompt" 
+                        class="mt-2 bg-purple-500 hover:bg-purple-700 text-white font-bold py-1 px-3 rounded text-sm focus:outline-none focus:shadow-outline"
+                        :disabled="isProcessing"
+                    >
+                        保存Prompt
+                    </button>
+                </div>
             </div>
             
             <!-- Agent状态指示区域 -->
@@ -90,13 +111,31 @@
             <!-- 运行控制区域 -->
             <div class="bg-white rounded-lg shadow-md p-6 mb-8">
                 <h2 class="text-xl font-semibold mb-4 text-gray-700">执行任务</h2>
-                <button 
-                    @click="runAllTasks" 
-                    class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-                    :disabled="isRunning || isProcessing"
-                >
-                    {{ isRunning ? '运行中...' : '运行所有任务' }}
-                </button>
+                <div class="flex flex-col sm:flex-row sm:items-center sm:space-x-4">
+                    <button 
+                        @click="runAllTasks" 
+                        class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mb-2 sm:mb-0"
+                        :disabled="isRunning || isProcessing"
+                    >
+                        {{ isRunning ? '运行中...' : '运行所有任务' }}
+                    </button>
+                    
+                    <!-- LLM选择下拉菜单 -->
+                    <div class="flex items-center">
+                        <label class="block text-gray-700 text-sm font-bold mr-2" for="llmProvider">
+                            底层LLM:
+                        </label>
+                        <select 
+                            id="llmProvider" 
+                            v-model="selectedLLM" 
+                            class="shadow appearance-none border rounded py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                            :disabled="isRunning || isProcessing"
+                        >
+                            <option value="gemini">Gemini</option>
+                            <option value="deepseek">DeepSeek</option>
+                        </select>
+                    </div>
+                </div>
                 <p v-if="runCompleted" class="mt-4 text-green-600 font-medium">所有任务已成功完成！</p>
             </div>
             
@@ -121,6 +160,8 @@
                 const newTargetUrl = ref('');
                 const newStartDate = ref('');
                 const newEndDate = ref('');
+                const newUserPrompt = ref('请分析此文档，提取关键内容并进行总结.');
+                const selectedLLM = ref('gemini');
                 const isProcessing = ref(false);
                 const isRunning = ref(false);
                 const runCompleted = ref(false);
@@ -153,6 +194,51 @@
                     });
                 };
                 
+                // 保存用户Prompt到config.json
+                const saveUserPrompt = async () => {
+                    if (!newUserPrompt.value.trim()) {
+                        addLog('错误: Prompt不能为空', 'console');
+                        return;
+                    }
+                    
+                    isProcessing.value = true;
+                    addLog('正在保存用户Prompt...', 'console');
+                    
+                    try {
+                        // 读取现有的配置文件
+                        const configContent = await fetch('/api/config-content');
+                        if (!configContent.ok) {
+                            const errorResult = await configContent.json();
+                            throw new Error(errorResult.error || 'Failed to fetch config content');
+                        }
+                        const configData = await configContent.json();
+                        
+                        // 更新require字段
+                        configData.require = newUserPrompt.value.trim();
+                        
+                        // 写入更新后的配置文件
+                        const response = await fetch('/api/update-config', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ require: newUserPrompt.value.trim() })
+                        });
+                        
+                        if (!response.ok) {
+                            const result = await response.json();
+                            throw new Error(result.error || 'Failed to update config');
+                        }
+                        
+                        const result = await response.json();
+                        addLog('用户Prompt保存成功', 'console');
+                    } catch (error) {
+                        addLog(`保存用户Prompt失败: ${error.message}`, 'console');
+                    } finally {
+                        isProcessing.value = false;
+                    }
+                };
+                
                 // 设置Agent状态
                 const setAgentStatus = (agent, status) => {
                     agentStatus[agent] = status === 'running' ? 'bg-red-500' : 'bg-green-500';
@@ -177,7 +263,8 @@
                             body: JSON.stringify({
                                 targetUrl: newTargetUrl.value,
                                 startDate: newStartDate.value,
-                                endDate: newEndDate.value
+                                endDate: newEndDate.value,
+                                require: newUserPrompt.value
                             })
                         });
                         
@@ -188,6 +275,7 @@
                             newTargetUrl.value = '';
                             newStartDate.value = '';
                             newEndDate.value = '';
+                            newUserPrompt.value = '请分析此文档，提取关键内容并进行总结.';
                         } else {
                             addLog(`创建配置文件失败: ${result.error}`, 'console');
                         }
@@ -289,6 +377,8 @@
                     newTargetUrl,
                     newStartDate,
                     newEndDate,
+                    newUserPrompt,
+                    selectedLLM,
                     isProcessing,
                     isRunning,
                     runCompleted,
@@ -297,6 +387,7 @@
                     agentStatus,
                     createConfigFiles,
                     runAllTasks,
+                    saveUserPrompt,
                     addLog,
                     setAgentStatus
                 };

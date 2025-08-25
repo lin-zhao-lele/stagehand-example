@@ -26,7 +26,7 @@ const ensureDirectories = () => {
 // 创建配置文件
 app.post('/api/config', (req, res) => {
   try {
-    const { targetUrl, startDate, endDate } = req.body;
+    const { targetUrl, startDate, endDate, require } = req.body;
     
     if (!targetUrl || !startDate || !endDate) {
       return res.status(400).json({ error: 'Missing required fields: targetUrl, startDate, or endDate' });
@@ -43,6 +43,7 @@ app.post('/api/config', (req, res) => {
       target_url: targetUrl.trim(),
       startDate: startDate,
       endDate: endDate,
+      require: require || "请分析此文档，提取关键内容并进行总结.",
       titles: []
     };
     
@@ -71,6 +72,48 @@ app.get('/api/configs', (req, res) => {
     });
     
     res.json(configs);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 获取当前配置文件内容
+app.get('/api/config-content', (req, res) => {
+  try {
+    const configFile = 'config.json';
+    if (!fs.existsSync(configFile)) {
+      return res.status(404).json({ error: 'Configuration file not found' });
+    }
+    
+    const content = fs.readFileSync(configFile, 'utf8');
+    const configData = JSON.parse(content);
+    res.json(configData);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 更新配置文件
+app.post('/api/update-config', (req, res) => {
+  try {
+    const { require } = req.body;
+    
+    // 检查config.json文件是否存在
+    const configFile = 'config.json';
+    if (!fs.existsSync(configFile)) {
+      return res.status(404).json({ error: 'Configuration file not found' });
+    }
+    
+    // 读取现有的配置文件
+    const configData = JSON.parse(fs.readFileSync(configFile, 'utf8'));
+    
+    // 更新require字段
+    configData.require = require;
+    
+    // 写入更新后的配置文件
+    fs.writeFileSync(configFile, JSON.stringify(configData, null, 2));
+    
+    res.json({ success: true, message: 'Configuration updated successfully' });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
