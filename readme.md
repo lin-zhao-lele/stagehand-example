@@ -1,92 +1,166 @@
-# 使用 uv
-uv venv .venv
-source .venv/bin/activate  # Linux/Mac
-uv pip install stagehand python-dotenv google-generativeai
+# 上市公司公告分析助手
 
-# 或使用 pip
-pip install stagehand python-dotenv google-generativeai
+本项目是一个Web应用程序，用于自动化分析上市公司公告PDF文件。它支持多种大语言模型（LLM）进行文档分析，并提供友好的Web界面进行配置和任务管理。
 
-# 完整安装playwright
-python -m playwright install
+## 项目功能
 
-# 指定安装特定浏览器
-python -m playwright install chromium
+- 自动从指定网站下载上市公司公告PDF文件
+- 使用大语言模型（Gemini或DeepSeek）分析PDF内容
+- 提供Web界面进行任务配置和状态监控
+- 支持打包下载分析结果
+- 支持清理已处理的文件
 
-# 启动Web应用程序
+## 系统要求
 
-## 前置条件
-确保已安装Node.js和npm
+- Node.js (v14或更高版本)
+- Python (v3.8或更高版本)
+- uv (Python包管理器，推荐使用)
 
-## 安装依赖
+## 使用uv进行包管理
+
+本项目推荐使用[uv](https://github.com/astral-sh/uv)进行Python包管理，它比pip更快更高效。
+
+### 安装uv
+
+在Linux/macOS上：
 ```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+在Windows上（PowerShell）：
+```powershell
+powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
+
+更多安装选项请参考：https://docs.astral.sh/uv/getting-started/installation/
+
+## 安装和设置
+
+### 1. 克隆项目
+
+```bash
+git clone git@github.com:lin-zhao-lele/stagehand-example.git
+cd Stagehand
+```
+
+### 2. 设置Python环境
+
+使用uv创建虚拟环境并安装依赖：
+
+```bash
+# 创建虚拟环境
+uv venv .venv
+
+# 激活虚拟环境
+source .venv/bin/activate  # Linux/macOS
+# 或
+.venv\Scripts\activate     # Windows
+
+# 安装Python依赖
+uv pip install stagehand python-dotenv google-generativeai PyPDF2 openai
+
+# 安装Playwright浏览器依赖
+python -m playwright install
+```
+
+### 3. 设置Node.js环境
+
+```bash
+# 安装Node.js依赖
 npm install
 ```
 
-## 启动服务器
+### 4. 配置环境变量
+
+在项目根目录下创建或编辑`.env`文件：
+
+```env
+# 选择LLM提供商 (gemini 或 deepseek)
+LLM_PROVIDER=gemini
+
+# Gemini配置
+GEMINI_API_KEY=your_gemini_api_key_here
+GEMINI_MODEL_NAME=gemini-1.5-flash
+
+# DeepSeek配置 (如果使用DeepSeek)
+DEEPSEEK_API_KEY=your_deepseek_api_key_here
+DEEPSEEK_MODEL_NAME=deepseek-chat
+```
+
+## 启动应用程序
+
+### 1. 启动Web服务器
+
 ```bash
-node server.js
+npm start
 ```
 
 服务器将运行在 http://localhost:3000
 
-## 使用说明
-1. 打开浏览器访问 http://localhost:3000
-2. 在"创建配置文件"区域输入目标URL和公司名称
-3. 点击"创建配置文件"按钮
-4. 点击"运行所有任务"按钮开始执行任务
+### 2. 访问Web界面
 
-## 功能说明
-- 配置文件创建：支持同时创建多个配置文件，文件名格式为config_1.json, config_2.json等
-- 任务执行流程：
-  1. 运行预处理阶段处理每个配置文件
-  2. 运行从服务器获取pdf文件下载PDF文件
-  3. 将下载的PDF文件从downloads目录移动到data目录
-  4. 运行大语言模型分析分析data目录中的每个PDF文件
-- 实时状态显示：显示各个agent的运行状态
-- 日志显示：在Console区域显示任务执行日志
+打开浏览器访问 http://localhost:3000
+
+## 使用说明
+
+1. 在"创建配置文件"区域输入目标URL和日期范围
+2. 在"用户Prompt"区域输入分析要求（可选）
+3. 选择底层LLM提供商（Gemini或DeepSeek）
+4. 点击"创建配置文件"按钮
+5. 点击"运行所有任务"按钮开始执行任务
+6. 任务完成后，可以使用"打包下载分析结果"下载分析结果
 
 ## 大语言模型(LLM)支持
-本项目支持多种大语言模型：
-- Gemini (默认)
-- DeepSeek
 
-### 如何切换不同的LLM
+### Gemini (默认)
+- 在 `.env` 文件中设置: `LLM_PROVIDER=gemini`
+- 配置Gemini API密钥: `GEMINI_API_KEY=your_api_key_here`
+- 可选配置模型名称: `GEMINI_MODEL_NAME=gemini-1.5-flash`
 
-1. **使用Gemini (默认)**
-   - 在 .env 文件中设置: `LLM_PROVIDER=gemini`
-   - 确保已配置Gemini API密钥: `GEMINI_API_KEY=your_api_key_here`
-   - 可选配置模型名称: `GEMINI_MODEL_NAME=gemini-2.0-flash` (默认值)
+### DeepSeek
+- 在 `.env` 文件中设置: `LLM_PROVIDER=deepseek`
+- 配置DeepSeek API密钥: `DEEPSEEK_API_KEY=your_api_key_here`
+- 可选配置模型名称: `DEEPSEEK_MODEL_NAME=deepseek-chat`
 
-2. **使用DeepSeek**
-   - 在 .env 文件中设置: `LLM_PROVIDER=deepseek`
-   - 配置DeepSeek API密钥: `DEEPSEEK_API_KEY=your_api_key_here`
-   - 可选配置模型名称: `DEEPSEEK_MODEL_NAME=deepseek-chat` (默认值)
+## 文件操作功能
 
-### .env配置示例
+- **打包下载分析结果**：将data目录下的.md文件（和可选的.pdf文件）打包成ZIP文件下载
+- **删除已分析文件**：清理data目录下已处理的文件以节省存储空间
 
-```env
-# Gemini配置 (默认)
-LLM_PROVIDER=gemini
-GEMINI_API_KEY=AIzaSyDDkyznSm4lWHUpJ1MoteHysANqG797KuQ
-GEMINI_MODEL_NAME=gemini-2.0-flash
+## 项目结构
 
-# DeepSeek配置 (可选)
-DEEPSEEK_API_KEY=sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-DEEPSEEK_MODEL_NAME=deepseek-chat
+```
+Stagehand/
+├── .env                  # 环境变量配置文件
+├── server.js             # Node.js服务器主文件
+├── package.json          # Node.js依赖配置
+├── callLLM.py            # LLM调用脚本
+├── inputJson.py          # 预处理脚本
+├── getPdfFiles.py        # PDF文件下载脚本
+├── getHerfWithoutAI.py   # URL获取脚本
+├── public/               # Web前端文件
+├── data/                 # 分析结果存储目录
+├── downloads/            # 下载文件临时存储目录
+└── README.md             # 项目说明文档
 ```
 
-### 切换步骤
-1. 打开项目根目录下的 `.env` 文件
-2. 修改 `LLM_PROVIDER` 的值为想要使用的LLM提供商
-3. 确保相应提供商的API密钥已正确配置
-4. 保存文件并重启应用程序
-5. 运行任务时将自动使用配置的LLM提供商
+## 故障排除
 
-## 版本说明
- version 0.1.X 不带web UI
- version 0.2.X 带js webUI 初始版本 有问题 能run 
+### 常见问题
 
+1. **端口被占用**：如果3000端口被占用，可以修改server.js中的PORT变量
+2. **API密钥错误**：确保.env文件中的API密钥正确配置
+3. **依赖安装失败**：尝试使用`npm install --force`或`uv pip install --force-reinstall`
 
-## 测试
-https://www.cninfo.com.cn/new/disclosure/stock?orgId=gssz0002031&stockCode=002031#latestAnnouncement
-巨轮智能
+### 查看日志
+
+应用程序日志会在Web界面的"执行日志"区域显示，也可以在终端中查看服务器输出。
+
+## 版本信息
+
+- version 0.1.X 不带web UI
+- version 0.2.X 带js webUI 初始版本
+
+## 许可证
+
+[待添加许可证信息]

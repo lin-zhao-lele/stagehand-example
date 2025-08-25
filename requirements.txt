@@ -1,0 +1,6 @@
+stagehand
+python-dotenv
+google-generativeai
+PyPDF2
+openai
+playwright
