@@ -543,6 +543,95 @@ app.post('/api/download-files', (req, res) => {
   }
 });
 
+// 下载PDF文件
+app.post('/api/download-pdf-files', async (req, res) => {
+  // 设置SSE响应头
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache',
+    'Connection': 'keep-alive',
+    'Access-Control-Allow-Origin': '*'
+  });
+
+  try {
+    // 发送开始消息
+    res.write(`data: ${JSON.stringify({ type: 'start', message: '开始下载PDF文件...' })}\n\n`);
+    
+    // 检查config.json文件是否存在
+    const configFile = 'config.json';
+    if (!fs.existsSync(configFile)) {
+      res.write(`data: ${JSON.stringify({ type: 'error', message: '没有找到配置文件 config.json' })}\n\n`);
+      res.end();
+      return;
+    }
+    
+    res.write(`data: ${JSON.stringify({ type: 'info', message: '使用配置文件下载PDF文件...' })}\n\n`);
+    
+    // 运行 getPdfFiles.py 脚本
+    await runPythonScript('getPdfFiles.py', [configFile]);
+    
+    res.write(`data: ${JSON.stringify({ type: 'end', message: 'PDF文件下载完成' })}\n\n`);
+    res.end();
+  } catch (error) {
+    console.error('下载PDF文件失败:', error);
+    if (res && !res.headersSent) {
+      res.write(`data: ${JSON.stringify({ type: 'error', message: `下载PDF文件失败: ${error.message}` })}\n\n`);
+      res.end();
+    }
+  }
+});
+
+// 打包并下载PDF文件
+app.post('/api/download-pdf-zip', (req, res) => {
+  try {
+    // 检查downloads目录是否存在
+    const downloadsDir = './downloads';
+    if (!fs.existsSync(downloadsDir)) {
+      return res.status(404).json({ error: 'Downloads directory not found' });
+    }
+    
+    // 获取downloads目录下的所有PDF文件
+    const files = fs.readdirSync(downloadsDir);
+    const pdfFiles = files.filter(file => file.endsWith('.pdf') || file.endsWith('.PDF'));
+    
+    if (pdfFiles.length === 0) {
+      return res.status(404).json({ error: 'No PDF files found to download' });
+    }
+    
+    // 创建临时zip文件
+    const zip = new (require('adm-zip'))();
+    
+    // 添加PDF文件到zip
+    pdfFiles.forEach(file => {
+      const filePath = path.join(downloadsDir, file);
+      if (fs.existsSync(filePath)) {
+        zip.addLocalFile(filePath);
+      }
+    });
+    
+    // 生成zip文件名
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const zipFileName = `pdf_files_${timestamp}.zip`;
+    
+    // 设置响应头
+    res.writeHead(200, {
+      'Content-Type': 'application/zip',
+      'Content-Disposition': `attachment; filename="${zipFileName}"`
+    });
+    
+    // 发送zip文件内容
+    const zipBuffer = zip.toBuffer();
+    res.end(zipBuffer);
+    
+  } catch (error) {
+    console.error('打包下载PDF文件时出错:', error);
+    // 检查响应头是否已经发送
+    if (!res.headersSent) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+});
+
 // 删除data目录下的文件
 app.post('/api/clear-data-files', (req, res) => {
   try {
