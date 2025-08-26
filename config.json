@@ -1,10 +1,12 @@
 {
     "target_url": "https://www.cninfo.com.cn/new/disclosure/stock?orgId=gssz0002031&stockCode=002031#latestAnnouncement",
-    "startDate": "2025-03-01",
-    "endDate": "2025-08-25",
+    "startDate": "2025-07-01",
+    "endDate": "2025-08-26",
     "require": "请分析此文档，提取关键内容并进行总结.",
     "titles": [
+
     ],
     "hrefs": [
+        
     ]
 }
