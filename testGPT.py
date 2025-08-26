@@ -95,29 +95,7 @@ async def main():
 
             page_no += 1
 
-        # 4. 遍历公告行
-        # rows = await page.query_selector_all('tr.el-table__row')
-        # titles, hrefs, times = [], [], []
-        #
-        # for row in rows:
-        #     a_tag = await row.query_selector('a[href*="/new/disclosure/detail"]')
-        #     time_span = await row.query_selector('span.time')
-        #
-        #     if a_tag:
-        #         title = (await a_tag.inner_text() or "").strip()
-        #         href = await a_tag.get_attribute("href")
-        #         full_url = urljoin(BASE, href) if href else None
-        #         titles.append(title)
-        #         hrefs.append(full_url)
-        #
-        #     if time_span:
-        #         times.append((await time_span.inner_text()).strip())
-        #     else:
-        #         times.append("")
-        #
-        # # 打印结果
-        # for t, h, tm in zip(titles, hrefs, times):
-        #     print(f"{tm} | {t} -> {h}")
+
 
 
 

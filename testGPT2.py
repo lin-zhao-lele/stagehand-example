@@ -1,5 +1,7 @@
 import os
 import asyncio
+import sys
+import json
 from urllib.parse import urljoin
 from dotenv import load_dotenv
 from stagehand import Stagehand, StagehandConfig
@@ -11,29 +13,46 @@ config = StagehandConfig(
     env="LOCAL",
     model_name="google/gemini-2.0-flash",
     model_api_key=api_key,
-    local_browser_launch_options={"headless": False},
+    local_browser_launch_options={"headless": True},
     verbose=3,
     debug_dom=True
 )
 
 BASE = "https://www.cninfo.com.cn"
-URL  = "https://www.cninfo.com.cn/new/disclosure/stock?orgId=gssz0002031&stockCode=002031#latestAnnouncement"
 
-async def main():
+async def main(configJson):
     async with Stagehand(config) as sh:
+        # 读取配置文件
+        with open(configJson, 'r', encoding='utf-8') as f:
+            config_data = json.load(f)
+
+        config_data['titles'] = []
+        config_data['hrefs'] = []
+
+        # 验证target_url是否以https://www.cninfo.com.cn开头
+        target_url = config_data['target_url']
+        if not target_url.startswith('https://www.cninfo.com.cn'):
+            print("错误: 本项目能够处理的target_url是受限的，目前仅能处理针对https://www.cninfo.com.cn网站的请求")
+            return
+
+        startDate = config_data['startDate']
+        endDate = config_data['endDate']
+
         page = sh.page
 
         # 1. 打开公告页面
-        await page.goto(URL)
+        await page.goto(target_url)
 
         # 2. 输入日期并点击查询
-        await page.fill('input[placeholder="开始日期"]', '2025-07-01')
-        await page.fill('input[placeholder="结束日期"]', '2025-08-26')
+        await page.fill('input[placeholder="开始日期"]', startDate)
+        await page.fill('input[placeholder="结束日期"]', endDate)
         await page.click('button:has-text("查询")')
 
         # 3. 等待表格行加载
         await page.wait_for_selector('tr.el-table__row', timeout=20000)
 
+        titleList = []
+        hrefList = []
         page_no = 1
         while True:
             print(f"\n=== 第 {page_no} 页 ===")
@@ -71,6 +90,9 @@ async def main():
                             when = (await time_loc.inner_text()).strip()
                     except Exception:
                         pass
+
+                    titleList.append(title)
+                    hrefList.append(urljoin(BASE, href))
 
                     print(when, title, href)
 
@@ -127,6 +149,13 @@ async def main():
 
             page_no += 1
 
+        config_data['titles'] = titleList
+        config_data['hrefs']= hrefList
+
+        with open(configJson, 'w', encoding='utf-8') as f:
+            json.dump(config_data, f, ensure_ascii=False, indent=4)
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    # 获取命令行参数，如果没有提供则使用默认的config_1.json
+    config_file = sys.argv[1] if len(sys.argv) > 1 else 'config.json'
+    asyncio.run(main(config_file))
