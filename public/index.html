@@ -215,6 +215,20 @@
                 const logContainer = ref(null);
                 const username = ref('');
                 
+                // 获取当前LLM_PROVIDER值
+                const getCurrentLLMProvider = async () => {
+                    try {
+                        const response = await fetch('/api/current-llm');
+                        const result = await response.json();
+                        
+                        if (result.success) {
+                            selectedLLM.value = result.llmProvider;
+                        }
+                    } catch (error) {
+                        console.error('获取当前LLM_PROVIDER失败:', error);
+                    }
+                };
+                
                 // 检查登录状态
                 const checkAuthStatus = async () => {
                     try {
@@ -223,6 +237,8 @@
                         
                         if (result.authenticated) {
                             username.value = result.username;
+                            // 获取当前LLM_PROVIDER值
+                            await getCurrentLLMProvider();
                         } else {
                             // 未登录，重定向到登录页面
                             window.location.href = '/login.html';

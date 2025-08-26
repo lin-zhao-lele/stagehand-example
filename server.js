@@ -235,6 +235,28 @@ app.get('/api/config-content', (req, res) => {
   }
 });
 
+// 获取当前.env文件中的LLM_PROVIDER值
+app.get('/api/current-llm', (req, res) => {
+  try {
+    // 检查.env文件是否存在
+    const envFile = '.env';
+    if (!fs.existsSync(envFile)) {
+      return res.status(404).json({ error: '.env file not found' });
+    }
+    
+    // 读取.env文件内容
+    const envContent = fs.readFileSync(envFile, 'utf8');
+    
+    // 查找LLM_PROVIDER行
+    const llmProviderMatch = envContent.match(/LLM_PROVIDER=(.*)/);
+    const llmProvider = llmProviderMatch ? llmProviderMatch[1].trim() : 'gemini';
+    
+    res.json({ success: true, llmProvider });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // 更新.env文件中的LLM_PROVIDER值
 app.post('/api/update-env', (req, res) => {
   try {
