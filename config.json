@@ -1,12 +1,14 @@
 {
     "target_url": "https://www.cninfo.com.cn/new/disclosure/stock?orgId=gssz0002031&stockCode=002031#latestAnnouncement",
-    "startDate": "2025-07-01",
-    "endDate": "2025-08-26",
+    "startDate": "2024-12-25",
+    "endDate": "2025-01-01",
     "require": "请分析此文档，提取关键内容并进行总结.",
     "titles": [
-
+        "巨轮智能：2024年第二次临时股东大会法律意见书",
+        "巨轮智能：2024年第二次临时股东大会决议公告"
     ],
     "hrefs": [
-
+        "https://www.cninfo.com.cn/new/disclosure/detail?plate=szse&orgId=gssz0002031&stockCode=002031&announcementId=1222180577&announcementTime=2024-12-30 11:00",
+        "https://www.cninfo.com.cn/new/disclosure/detail?plate=szse&orgId=gssz0002031&stockCode=002031&announcementId=1222180575&announcementTime=2024-12-30 11:00"
     ]
 }
