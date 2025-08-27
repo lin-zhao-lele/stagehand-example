@@ -587,9 +587,14 @@ app.post('/api/download-pdf-files', async (req, res) => {
       return;
     }
     
-    res.write(`data: ${JSON.stringify({ type: 'info', message: '使用配置文件下载PDF文件...' })}\n\n`);
+    res.write(`data: ${JSON.stringify({ type: 'info', message: '执行预处理任务...' })}\n\n`);
     
-    // 运行 getPdfFiles.py 脚本
+    // 先运行 inputJson.py 脚本
+    await runPythonScript('inputJson.py', [configFile]);
+    
+    res.write(`data: ${JSON.stringify({ type: 'info', message: '预处理任务完成，开始下载PDF文件...' })}\n\n`);
+    
+    // 再运行 getPdfFiles.py 脚本
     await runPythonScript('getPdfFiles.py', [configFile]);
     
     res.write(`data: ${JSON.stringify({ type: 'end', message: 'PDF文件下载完成' })}\n\n`);
