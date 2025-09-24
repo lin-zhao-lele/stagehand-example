@@ -81,7 +81,7 @@ def call_gemini_analyze_pdf(pdf_path):
         print("\n✅ PDF 文件上传完成")
         
         # 构建提示内容
-        prompt = f"{request_content}\n\n请分析附件中的 PDF 文档并按以下格式返回结果：\n\n## 文档摘要\n[文档的核心内容摘要]\n\n## 关键信息\n- [要点1]\n- [要点2]\n- [要点3]\n\n## 详细内容\n[文档的详细分析]"
+        prompt = f"{request_content}\n\n请分析附件中的 PDF 文档并按以下格式返回结果：\n\n## 公告编号\n[文档内的公告编号] \n\n## 公告日期\n[文档最后的一行的日期]  \n\n## 文档摘要\n[文档的核心内容摘要]\n\n## 关键信息\n- [要点1]\n- [要点2]\n- [要点3]\n\n## 详细内容\n[文档的详细分析]"
         
         # 调用 Gemini 生成内容
         print(f"正在调用 {GEMINI_MODEL_NAME} 分析文档...")
@@ -154,7 +154,7 @@ def call_deepseek_analyze_pdf(pdf_path):
             text_content = "[无法从PDF中提取文本内容，可能是扫描版PDF]"
         
         # 构建提示内容
-        prompt = f"{request_content}\n\n文档内容如下:\n{text_content}\n\n请分析文档并按以下格式返回结果：\n\n## 文档摘要\n[文档的核心内容摘要]\n\n## 关键信息\n- [要点1]\n- [要点2]\n- [要点3]\n\n## 详细内容\n[文档的详细分析]"
+        prompt = f"{request_content}\n\n文档内容如下:\n{text_content}\n\n请分析文档并按以下格式返回结果：\n\n## 公告编号\n[文档内的公告编号] \n\n## 公告日期\n[文档最后的一行的日期]  \n\n## 文档摘要\n[文档的核心内容摘要]\n\n## 关键信息\n- [要点1]\n- [要点2]\n- [要点3]\n\n## 详细内容\n[文档的详细分析]"
         
         # 配置DeepSeek API客户端
         client = OpenAI(

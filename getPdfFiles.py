@@ -14,7 +14,7 @@ async def save_pdf(stagehand, title, pdf_url):
     page = stagehand.page
 
     # 等待页面加载完成
-    await page.wait_for_timeout(5000)
+    await page.wait_for_timeout(30000)
 
     # 下载 PDF
     print(f"📥 开始下载: {title}")
@@ -51,10 +51,11 @@ async def main(configJson):
 
     # 打开公告列表页面
     await page.goto(target_url)
-    await page.wait_for_timeout(5000)
+    await page.wait_for_timeout(20000)
 
     # 遍历titles和hrefs列表，下载对应的PDF文件
     for title, href in zip(titles, hrefs):
+
         await save_pdf(stagehand, title, href)
 
     await stagehand.close()
